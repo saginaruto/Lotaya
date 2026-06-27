@@ -130,11 +130,15 @@ export default function MyBalanceScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
-  content: { padding: 20 },
+  content: { 
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: 40 
+  },
   balanceCard: { 
     backgroundColor: '#1e293b', 
-    borderRadius: 20, 
-    padding: 24, 
+    borderRadius: 16, 
+    padding: 20, 
     elevation: 4, 
     shadowColor: '#000', 
     shadowOffset: { width: 0, height: 2 }, 

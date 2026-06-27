@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     alignItems: 'center', 
     paddingHorizontal: 20, 
-    paddingVertical: 16, 
+    paddingVertical: 12, 
     backgroundColor: '#ffffff', 
     borderBottomWidth: 1, 
     borderBottomColor: '#f3f4f6' 
@@ -169,8 +169,9 @@ const styles = StyleSheet.create({
   },
   list: { flex: 1 },
   listContent: { 
-    padding: 16, 
-    paddingBottom: 30 
+    paddingHorizontal: 20,
+    paddingVertical: 12, 
+    paddingBottom: 40 
   },
   notificationItem: { 
     backgroundColor: '#ffffff', 

@@ -93,7 +93,11 @@ export default function LotteryParticipantsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { 
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: 40 
+  },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Types ကို တိုက်ရိုက်သတ်မှတ်ပါ
 interface Activity {
   id: string;
   title: string;
@@ -19,7 +19,6 @@ interface Wallet {
 
 type FilterType = 'all' | 'earn' | 'spend' | 'reward';
 
-// Storage function ကို တိုက်ရိုက်ရေးပါ
 const WALLET_KEY = 'walletData';
 
 const getWallet = async (): Promise<Wallet> => {
@@ -75,7 +74,8 @@ export default function TransactionHistoryScreen() {
   const filtered = getFilteredActivities();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
       <View style={styles.filterContainer}>
         {(['all', 'earn', 'spend', 'reward'] as FilterType[]).map((f) => (
           <TouchableOpacity 
@@ -121,20 +121,24 @@ export default function TransactionHistoryScreen() {
           ))
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f9fafb',
+  },
   filterContainer: { 
     flexDirection: 'row', 
     backgroundColor: '#ffffff', 
     paddingHorizontal: 16, 
-    paddingVertical: 12, 
+    paddingVertical: 10, 
     borderBottomWidth: 1, 
     borderBottomColor: '#f3f4f6', 
-    gap: 8 
+    gap: 8,
+    marginHorizontal: 0,
   },
   filterTab: { 
     paddingHorizontal: 16, 
@@ -153,10 +157,13 @@ const styles = StyleSheet.create({
   filterTextActive: { 
     color: '#ffffff' 
   },
-  list: { flex: 1 },
+  list: { 
+    flex: 1 
+  },
   listContent: { 
-    padding: 16, 
-    paddingBottom: 30 
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingBottom: 40 
   },
   transactionItem: { 
     flexDirection: 'row', 

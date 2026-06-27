@@ -5,6 +5,7 @@ import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GLOBAL_WALLET, updateParticipants, checkEligibility, sendTelegramMessage, addNotification } from './(tabs)/index';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getWallet, saveWallet } from './lib/storage';
 
 const { width } = Dimensions.get('window');
 const COOLDOWN_MINUTES = 15;
@@ -23,7 +24,6 @@ export default function AdWatchScreen() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // 🎯 Lottery Join State
   const [isEligible, setIsEligible] = useState(false);
   const [hasJoinedLottery, setHasJoinedLottery] = useState(false);
   const [lotteryCount, setLotteryCount] = useState(0);
@@ -37,7 +37,6 @@ export default function AdWatchScreen() {
     };
   }, []);
 
-  // 🎯 Lottery Status Check
   const checkLotteryStatus = async () => {
     const userName = await AsyncStorage.getItem('userName') || 'User';
     const eligible = checkEligibility();
@@ -47,7 +46,6 @@ export default function AdWatchScreen() {
     setBalance(GLOBAL_WALLET.balance);
   };
 
-  // 🎯 Handle Join Lottery
   const handleJoinLottery = async () => {
     if (GLOBAL_WALLET.balance < 700) {
       Alert.alert('Insufficient Points', 'You need at least 700 RP to join the lottery.');
@@ -69,6 +67,12 @@ export default function AdWatchScreen() {
               amount: '-700 RP',
               date: new Date().toLocaleDateString(),
             });
+
+            // AsyncStorage ကိုလည်း update လုပ်ပါ
+            const currentWallet = await getWallet();
+            currentWallet.balance = GLOBAL_WALLET.balance;
+            currentWallet.activities = GLOBAL_WALLET.activities;
+            await saveWallet(currentWallet);
 
             const userName = await AsyncStorage.getItem('userName') || 'User';
             GLOBAL_WALLET.lotteryParticipants.push({
@@ -155,7 +159,7 @@ export default function AdWatchScreen() {
       const rewardPoints = 10;
       setReward(rewardPoints);
       
-      // ======================== GLOBAL_WALLET UPDATE ========================
+      // GLOBAL_WALLET ကို update လုပ်ပါ
       GLOBAL_WALLET.balance += rewardPoints;
       GLOBAL_WALLET.totalEarned += rewardPoints;
       GLOBAL_WALLET.activities.unshift({
@@ -165,11 +169,19 @@ export default function AdWatchScreen() {
         date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' Today'
       });
 
-      // ✅ ဘောင်ဝင်ရန် စာရင်းထဲ ထည့်ခြင်း
+      // AsyncStorage ကိုလည်း update လုပ်ပါ
+      const updateStorage = async () => {
+        const currentWallet = await getWallet();
+        currentWallet.balance = GLOBAL_WALLET.balance;
+        currentWallet.totalEarned = GLOBAL_WALLET.totalEarned;
+        currentWallet.activities = GLOBAL_WALLET.activities;
+        await saveWallet(currentWallet);
+      };
+      updateStorage();
+
       updateParticipants();
       setBalance(GLOBAL_WALLET.balance);
 
-      // 🎯 ပြန်စစ်ဆေးပါ (Eligibility ပြောင်းသွားနိုင်လို့)
       const eligible = checkEligibility();
       setIsEligible(eligible);
 
@@ -212,7 +224,7 @@ export default function AdWatchScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)')} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={28} color="#ffffff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Watch Ads</Text>
@@ -220,7 +232,6 @@ export default function AdWatchScreen() {
       </View>
 
       <View style={styles.content}>
-        {/* 🎯 Lottery Join Button - 700 RP ပြည့်မှပြမယ် */}
         {isEligible && !hasJoinedLottery ? (
           <View style={styles.lotteryJoinContainer}>
             <View style={styles.lotteryHeader}>
@@ -364,7 +375,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // 🎯 Lottery Join Styles
   lotteryJoinContainer: {
     backgroundColor: '#1e293b',
     padding: 16,

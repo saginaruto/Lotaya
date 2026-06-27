@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, Linking } from 'react-native';
-import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert, StatusBar } from 'react-native';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
   const router = useRouter();
-
 
   const [sfxEnabled, setSfxEnabled] = useState(true);
   const [bgmEnabled, setBgmEnabled] = useState(true);
@@ -19,7 +19,6 @@ export default function SettingsScreen() {
 
   const loadSettings = async () => {
     try {
-      
       const savedSfx = await AsyncStorage.getItem('sfxEnabled');
       if (savedSfx !== null) setSfxEnabled(JSON.parse(savedSfx));
       
@@ -107,127 +106,116 @@ export default function SettingsScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* ၁။ အကောင့်နှင့် ပရိုဖိုင် */}
-      <SectionHeader title="Account & Profile" />
-      <View style={styles.section}>
-        <SettingItem
-          icon={<FontAwesome5 name="user-circle" size={20} color="#0a7ea4" />}
-          title="Profile"
-          subtitle="Name, Avatar, Bio"
-          onPress={() => router.push("/edit-profile")}
-        />
-        <SettingItem
-          icon={<FontAwesome5 name="coins" size={20} color="#fbbf24" />}
-          title="My Balance"
-          subtitle="View your current RP balance"
-          onPress={() => router.push("/my-balance")}
-        />
-        <SettingItem
-          icon={<FontAwesome5 name="history" size={20} color="#4ade80" />}
-          title="Transaction History"
-          subtitle="View all your earnings and spends"
-          onPress={() => router.push("/transaction-history")}
-        />
-        
-      </View>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* ၁။ အကောင့်နှင့် ပရိုဖိုင် */}
+        <SectionHeader title="Account & Profile" />
+        <View style={styles.section}>
+          <SettingItem
+            icon={<FontAwesome5 name="user-circle" size={20} color="#0a7ea4" />}
+            title="Profile"
+            subtitle="Name, Avatar, Bio"
+            onPress={() => router.push("/edit-profile")}
+          />
+        </View>
 
-      {/* ၂။ ဂိမ်းနှင့် Ads ထိန်းချုပ်မှု */}
-      <SectionHeader title="Game & Reward Settings" />
-      <View style={styles.section}>
-        
-        <SettingItem
-          icon={<Ionicons name="volume-high" size={20} color="#8b5cf6" />}
-          title="Sound Effects"
-          subtitle={sfxEnabled ? "On" : "Off"}
-          rightElement={
-            <Switch
-              value={sfxEnabled}
-              onValueChange={handleToggleSfx}
-              trackColor={{ false: '#334155', true: '#0a7ea4' }}
-              thumbColor={sfxEnabled ? '#ffffff' : '#94a3b8'}
-            />
-          }
-        />
-        <SettingItem
-          icon={<Ionicons name="musical-notes" size={20} color="#ec4899" />}
-          title="Background Music"
-          subtitle={bgmEnabled ? "On" : "Off"}
-          rightElement={
-            <Switch
-              value={bgmEnabled}
-              onValueChange={handleToggleBgm}
-              trackColor={{ false: '#334155', true: '#0a7ea4' }}
-              thumbColor={bgmEnabled ? '#ffffff' : '#94a3b8'}
-            />
-          }
-        />
-        <SettingItem
-          icon={<Ionicons name="notifications" size={20} color="#06b6d4" />}
-          title="Push Notifications"
-          subtitle={notificationsEnabled ? "On" : "Off"}
-          rightElement={
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={handleToggleNotifications}
-              trackColor={{ false: '#334155', true: '#0a7ea4' }}
-              thumbColor={notificationsEnabled ? '#ffffff' : '#94a3b8'}
-            />
-          }
-        />
-      </View>
+        {/* ၂။ ဂိမ်းနှင့် Ads ထိန်းချုပ်မှု */}
+        <SectionHeader title="Game & Reward Settings" />
+        <View style={styles.section}>
+          <SettingItem
+            icon={<Ionicons name="volume-high" size={20} color="#8b5cf6" />}
+            title="Sound Effects"
+            subtitle={sfxEnabled ? "On" : "Off"}
+            rightElement={
+              <Switch
+                value={sfxEnabled}
+                onValueChange={handleToggleSfx}
+                trackColor={{ false: '#334155', true: '#0a7ea4' }}
+                thumbColor={sfxEnabled ? '#ffffff' : '#94a3b8'}
+              />
+            }
+          />
+          <SettingItem
+            icon={<Ionicons name="musical-notes" size={20} color="#ec4899" />}
+            title="Background Music"
+            subtitle={bgmEnabled ? "On" : "Off"}
+            rightElement={
+              <Switch
+                value={bgmEnabled}
+                onValueChange={handleToggleBgm}
+                trackColor={{ false: '#334155', true: '#0a7ea4' }}
+                thumbColor={bgmEnabled ? '#ffffff' : '#94a3b8'}
+              />
+            }
+          />
+          <SettingItem
+            icon={<Ionicons name="notifications" size={20} color="#06b6d4" />}
+            title="Push Notifications"
+            subtitle={notificationsEnabled ? "On" : "Off"}
+            rightElement={
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ false: '#334155', true: '#0a7ea4' }}
+                thumbColor={notificationsEnabled ? '#ffffff' : '#94a3b8'}
+              />
+            }
+          />
+        </View>
 
-      {/* ၃။ အကူအညီနှင့် ထောက်ပံ့မှု */}
-      <SectionHeader title="Support & Help" />
-      <View style={styles.section}>
-        <SettingItem
-          icon={<Ionicons name="help-circle" size={20} color="#22d3ee" />}
-          title="FAQ"
-          subtitle="Frequently asked questions"
-        />
-        <SettingItem
-          icon={<Ionicons name="mail" size={20} color="#f472b6" />}
-          title="Contact Us"
-          subtitle="Email, Telegram, Messenger"
-        />
-        <SettingItem
-          icon={<Ionicons name="information-circle" size={20} color="#34d399" />}
-          title="About"
-          subtitle={`Version ${appVersion}`}
-          onPress={() => {
-            Alert.alert(
-              'About LifeOS',
-              `Version: ${appVersion}\n\nLifeOS is a fun and rewarding app where you can earn RP points by watching ads and playing Lucky Draw.`,
-              [{ text: 'OK' }]
-            );
-          }}
-        />
-      </View>
+        {/* ၃။ အကူအညီနှင့် ထောက်ပံ့မှု */}
+        <SectionHeader title="Support & Help" />
+        <View style={styles.section}>
+          <SettingItem
+            icon={<Ionicons name="help-circle" size={20} color="#22d3ee" />}
+            title="FAQ"
+            subtitle="Frequently asked questions"
+          />
+          <SettingItem
+            icon={<Ionicons name="mail" size={20} color="#f472b6" />}
+            title="Contact Us"
+            subtitle="Email, Telegram, Messenger"
+          />
+          <SettingItem
+            icon={<Ionicons name="information-circle" size={20} color="#34d399" />}
+            title="About"
+            subtitle={`Version ${appVersion}`}
+            onPress={() => {
+              Alert.alert(
+                'About LifeOS',
+                `Version: ${appVersion}\n\nLifeOS is a fun and rewarding app where you can earn RP points by watching ads and playing Lucky Draw.`,
+                [{ text: 'OK' }]
+              );
+            }}
+          />
+        </View>
 
-      {/* ၄။ ဥပဒေနှင့် လုံခြုံရေး */}
-      <SectionHeader title="Legal & Privacy" />
-      <View style={styles.section}>
-        <SettingItem
-          icon={<Ionicons name="document-text" size={20} color="#fb923c" />}
-          title="Privacy Policy"
-        />
-        <SettingItem
-          icon={<Ionicons name="document-text" size={20} color="#fb923c" />}
-          title="Terms of Service"
-        />
-        <SettingItem
-          icon={<Ionicons name="trash" size={20} color="#ef4444" />}
-          title="Delete Account"
-          subtitle="Permanently delete your account"
-          onPress={handleDeleteAccount}
-        />
-      </View>
+        {/* ၄။ ဥပဒေနှင့် လုံခြုံရေး */}
+        <SectionHeader title="Legal & Privacy" />
+        <View style={styles.section}>
+          <SettingItem
+            icon={<Ionicons name="document-text" size={20} color="#fb923c" />}
+            title="Privacy Policy"
+          />
+          <SettingItem
+            icon={<Ionicons name="document-text" size={20} color="#fb923c" />}
+            title="Terms of Service"
+          />
+          <SettingItem
+            icon={<Ionicons name="trash" size={20} color="#ef4444" />}
+            title="Delete Account"
+            subtitle="Permanently delete your account"
+            onPress={handleDeleteAccount}
+          />
+        </View>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>LifeOS v{appVersion}</Text>
-      </View>
-    </ScrollView>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>LifeOS v{appVersion}</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -235,8 +223,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
-    paddingHorizontal: 20,
-    paddingTop: 56,
   },
   sectionHeader: {
     color: '#6b7280',
@@ -244,8 +230,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginTop: 20,
+    marginTop: 16,
     marginBottom: 8,
+    paddingHorizontal: 20,
   },
   section: {
     backgroundColor: '#f3f4f6',
@@ -253,11 +240,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#e5e7eb',
+    marginHorizontal: 20,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',

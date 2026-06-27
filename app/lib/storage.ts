@@ -1,3 +1,5 @@
+// app/lib/storage.ts
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LotteryParticipant, Notification, Wallet, UserProfile, Activity } from '../types';
 
@@ -118,16 +120,10 @@ export const getLotteryParticipants = async (): Promise<LotteryParticipant[]> =>
   }
 };
 
-// Export all functions as default
-export default {
-  getWallet,
-  saveWallet,
-  getNotifications,
-  saveNotifications,
-  markAllAsRead,
-  deleteNotification,
-  getUserProfile,
-  saveUserProfile,
-  saveUserName,
-  getLotteryParticipants
+export const saveLotteryParticipants = async (participants: LotteryParticipant[]): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(LOTTERY_KEY, JSON.stringify(participants));
+  } catch (error) {
+    console.log('Error saving lottery participants:', error);
+  }
 };

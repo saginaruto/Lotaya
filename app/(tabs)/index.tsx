@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome5, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getWallet, saveWallet } from '../lib/storage';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_WIDTH = SCREEN_WIDTH - 40; 
@@ -207,33 +208,28 @@ export const sendLotteryListToTelegram = async () => {
 // ======================== CHECK AND SEND SUNDAY LIST ========================
 const checkAndSendLotteryList = async () => {
   const now = new Date();
-  const day = now.getDay(); // 0 = Sunday
+  const day = now.getDay();
   const hour = now.getHours();
   const minute = now.getMinutes();
   const today = now.toDateString();
   
-  // ✅ တနင်္ဂနွေနေ့တိုင်း 3:00 PM (15:00) မှာ ပို့မယ်
   if (day === 0 && hour === 15 && minute === 0) {
     try {
-      // ✅ AsyncStorage ကနေ ပြန်ဖတ်ပါ
       const saved = await AsyncStorage.getItem('lastSentSunday');
       let lastSent = { date: '', sent: false };
       if (saved) {
         lastSent = JSON.parse(saved);
       }
       
-      // ဒီနေ့အတွက် ပို့ပြီးပြီလား စစ်ပါ
       if (lastSent.date !== today || !lastSent.sent) {
         console.log('📤 Sending lottery list to Telegram...');
         await sendLotteryListToTelegram();
         
-        // ✅ AsyncStorage မှာ သိမ်းပါ
         await AsyncStorage.setItem('lastSentSunday', JSON.stringify({
           date: today,
           sent: true,
         }));
         
-        // ✅ GLOBAL ကိုလည်း update လုပ်ပါ
         LAST_SENT_SUNDAY.date = today;
         LAST_SENT_SUNDAY.sent = true;
         
@@ -301,6 +297,12 @@ export default function HomeScreen() {
               date: new Date().toLocaleDateString(),
             });
 
+            // AsyncStorage ကိုလည်း update လုပ်ပါ
+            const currentWallet = await getWallet();
+            currentWallet.balance = GLOBAL_WALLET.balance;
+            currentWallet.activities = GLOBAL_WALLET.activities;
+            await saveWallet(currentWallet);
+
             const userName = await AsyncStorage.getItem('userName') || 'User';
             GLOBAL_WALLET.lotteryParticipants.push({
               id: Date.now().toString(),
@@ -325,6 +327,14 @@ export default function HomeScreen() {
   };
 
   const refreshAllData = async () => {
+    // AsyncStorage ကနေ ပြန်ဖတ်ပါ
+    const savedWallet = await getWallet();
+    
+    // GLOBAL_WALLET ကို update လုပ်ပါ
+    GLOBAL_WALLET.balance = savedWallet.balance;
+    GLOBAL_WALLET.totalEarned = savedWallet.totalEarned;
+    GLOBAL_WALLET.activities = savedWallet.activities;
+    
     setBalance(GLOBAL_WALLET.balance);
 
     let earned = 0;
@@ -357,13 +367,11 @@ export default function HomeScreen() {
     await updateParticipants();
   };
 
-  // ======================== SUNDAY CHECK TIMER ========================
   useEffect(() => {
     refreshAllData();
     loadUnreadCount();
     checkLotteryStatus();
 
-    // ၁ မိနစ် (၆၀ စက္ကန့်) တိုင်း စစ်မယ်
     const checkInterval = setInterval(() => {
       checkAndSendLotteryList();
     }, 60000);
@@ -431,9 +439,7 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, [eduIndex, healthIndex]);
 
-  // ======================== FLOATING WIDGETS ========================
   const adPan = useRef(new Animated.ValueXY({ x: SCREEN_WIDTH - 90, y: SCREEN_HEIGHT - 280 })).current;
-  const spinPan = useRef(new Animated.ValueXY({ x: SCREEN_WIDTH - 90, y: SCREEN_HEIGHT - 180 })).current;
 
   const checkCollision = (pos1: {x: number, y: number}, pos2: {x: number, y: number}) => {
     const size = WIDGET_SIZE;
@@ -449,69 +455,14 @@ export default function HomeScreen() {
         adPan.setValue({ x: 0, y: 0 });
       },
       onPanResponderMove: (e, gesture) => {
-        const offsetX = (adPan.x as any)._offset;
-        const offsetY = (adPan.y as any)._offset;
-        const newX = offsetX + gesture.dx;
-        const newY = offsetY + gesture.dy;
-
-        const spinOffsetX = (spinPan.x as any)._offset;
-        const spinOffsetY = (spinPan.y as any)._offset;
-        const spinValueX = (spinPan.x as any)._value;
-        const spinValueY = (spinPan.y as any)._value;
-        const spinX = spinOffsetX + spinValueX;
-        const spinY = spinOffsetY + spinValueY;
-
-        if (!checkCollision({ x: newX, y: newY }, { x: spinX, y: spinY })) {
-          adPan.setValue({ x: gesture.dx, y: gesture.dy });
-        }
+        adPan.setValue({ x: gesture.dx, y: gesture.dy });
       },
       onPanResponderRelease: () => { adPan.flattenOffset(); },
     })
   ).current;
 
-  const spinPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        spinPan.setOffset({ x: (spinPan.x as any)._value, y: (spinPan.y as any)._value });
-        spinPan.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: (e, gesture) => {
-        const offsetX = (spinPan.x as any)._offset;
-        const offsetY = (spinPan.y as any)._offset;
-        const newX = offsetX + gesture.dx;
-        const newY = offsetY + gesture.dy;
-
-        const adOffsetX = (adPan.x as any)._offset;
-        const adOffsetY = (adPan.y as any)._offset;
-        const adValueX = (adPan.x as any)._value;
-        const adValueY = (adPan.y as any)._value;
-        const adX = adOffsetX + adValueX;
-        const adY = adOffsetY + adValueY;
-
-        if (!checkCollision({ x: newX, y: newY }, { x: adX, y: adY })) {
-          spinPan.setValue({ x: gesture.dx, y: gesture.dy });
-        }
-      },
-      onPanResponderRelease: () => { spinPan.flattenOffset(); },
-    })
-  ).current;
-
-  const wheelSegments = [
-    {color: '#eab308', rotate: '0deg' },    
-    {color: '#f97316', rotate: '45deg' },   
-    {color: '#4ade80', rotate: '90deg' },   
-    {color: '#16a34a', rotate: '135deg' },  
-    {color: '#dc2626', rotate: '180deg' },
-    {color: '#ec4899', rotate: '225deg' },
-    {color: '#38bdf8', rotate: '270deg' },
-    {color: '#1d4ed8', rotate: '315deg' },  
-  ];
-
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.userName}>{userName}</Text>
@@ -534,8 +485,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </View>
-
-      {/* ❌ Join Lottery Button ကို ဖယ်လိုက်ပြီ */}
 
       <View style={styles.adsContainer}>
         <View style={styles.bannerSection}>
@@ -577,7 +526,6 @@ export default function HomeScreen() {
         </View>
       </View>
       
-      {/* Widget 1 - Watch Ad Button */}
       <Animated.View {...adPanResponder.panHandlers} style={[styles.floatingWidget, { transform: [{ translateX: adPan.x }, { translateY: adPan.y }] }]}>
         <TouchableOpacity onPress={() => router.push("/ad-watch")} activeOpacity={0.85} style={[styles.circleButton, { backgroundColor: '#0284c7' }]}>
           <MaterialCommunityIcons name="play-circle" size={26} color="#fff" />
@@ -594,11 +542,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
     backgroundColor: '#ffffff',
+    marginTop: 0,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -669,7 +618,7 @@ const styles = StyleSheet.create({
   adsContainer: { 
     flex: 1, 
     paddingHorizontal: 20, 
-    paddingVertical: 10, 
+    paddingVertical: 12, 
     justifyContent: 'space-evenly' 
   },
   bannerSection: { 

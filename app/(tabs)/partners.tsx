@@ -1,9 +1,7 @@
-// app/(tabs)/partners.tsx
-
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ImageBackground, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ImageBackground, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { FontAwesome5 } from '@expo/vector-icons';
 
 export default function PartnersScreen() {
   const router = useRouter();
@@ -52,54 +50,112 @@ export default function PartnersScreen() {
   ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.headerTitle}>🤝 Our Partners</Text>
-      <Text style={styles.headerSub}>Exclusive deals and discounts for you</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.headerTitle}>🤝 Our Partners</Text>
+        <Text style={styles.headerSub}>Exclusive deals and discounts for you</Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🎓 Education Partners</Text>
-        {partners.filter(p => p.category === 'education').map((partner) => (
-          <TouchableOpacity key={partner.id} style={styles.partnerCard} onPress={() => router.push({ pathname: '/partner-detail', params: partner })}>
-            <ImageBackground source={{ uri: partner.bgImage }} style={styles.partnerImage} imageStyle={{ borderRadius: 12 }}>
-              <View style={styles.partnerOverlay}>
-                <Text style={styles.partnerName}>{partner.name}</Text>
-                <Text style={styles.partnerCity}>{partner.city}</Text>
-                <Text style={styles.partnerDiscount}>✨ {partner.discount}</Text>
-              </View>
-            </ImageBackground>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🎓 Education Partners</Text>
+          {partners.filter(p => p.category === 'education').map((partner) => (
+            <TouchableOpacity 
+              key={partner.id} 
+              style={styles.partnerCard} 
+              onPress={() => router.push({ pathname: '/partner-detail', params: partner })}
+            >
+              <ImageBackground source={{ uri: partner.bgImage }} style={styles.partnerImage} imageStyle={{ borderRadius: 12 }}>
+                <View style={styles.partnerOverlay}>
+                  <Text style={styles.partnerName}>{partner.name}</Text>
+                  <Text style={styles.partnerCity}>{partner.city}</Text>
+                  <Text style={styles.partnerDiscount}>✨ {partner.discount}</Text>
+                </View>
+              </ImageBackground>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🏥 Health Partners</Text>
-        {partners.filter(p => p.category === 'health').map((partner) => (
-          <TouchableOpacity key={partner.id} style={styles.partnerCard} onPress={() => router.push({ pathname: '/partner-detail', params: partner })}>
-            <ImageBackground source={{ uri: partner.bgImage }} style={styles.partnerImage} imageStyle={{ borderRadius: 12 }}>
-              <View style={styles.partnerOverlay}>
-                <Text style={styles.partnerName}>{partner.name}</Text>
-                <Text style={styles.partnerCity}>{partner.city}</Text>
-                <Text style={styles.partnerDiscount}>✨ {partner.discount}</Text>
-              </View>
-            </ImageBackground>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🏥 Health Partners</Text>
+          {partners.filter(p => p.category === 'health').map((partner) => (
+            <TouchableOpacity 
+              key={partner.id} 
+              style={styles.partnerCard} 
+              onPress={() => router.push({ pathname: '/partner-detail', params: partner })}
+            >
+              <ImageBackground source={{ uri: partner.bgImage }} style={styles.partnerImage} imageStyle={{ borderRadius: 12 }}>
+                <View style={styles.partnerOverlay}>
+                  <Text style={styles.partnerName}>{partner.name}</Text>
+                  <Text style={styles.partnerCity}>{partner.city}</Text>
+                  <Text style={styles.partnerDiscount}>✨ {partner.discount}</Text>
+                </View>
+              </ImageBackground>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  content: { padding: 20, paddingBottom: 40 },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: '#111827' },
-  headerSub: { fontSize: 14, color: '#6b7280', marginTop: 4, marginBottom: 20 },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 12 },
-  partnerCard: { marginBottom: 12, borderRadius: 12, overflow: 'hidden' },
-  partnerImage: { height: 140, justifyContent: 'flex-end' },
-  partnerOverlay: { backgroundColor: 'rgba(0,0,0,0.5)', padding: 16, borderRadius: 12 },
-  partnerName: { color: '#ffffff', fontSize: 18, fontWeight: '700' },
-  partnerCity: { color: '#cbd5e1', fontSize: 13, marginTop: 2 },
-  partnerDiscount: { color: '#fbbf24', fontSize: 14, fontWeight: '600', marginTop: 4 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f9fafb' 
+  },
+  content: { 
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: 40 
+  },
+  headerTitle: { 
+    fontSize: 24, 
+    fontWeight: '900', 
+    color: '#111827',
+    marginBottom: 4,
+  },
+  headerSub: { 
+    fontSize: 14, 
+    color: '#6b7280', 
+    marginBottom: 20 
+  },
+  section: { 
+    marginBottom: 24 
+  },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: '700', 
+    color: '#111827', 
+    marginBottom: 12 
+  },
+  partnerCard: { 
+    marginBottom: 12, 
+    borderRadius: 12, 
+    overflow: 'hidden' 
+  },
+  partnerImage: { 
+    height: 140, 
+    justifyContent: 'flex-end' 
+  },
+  partnerOverlay: { 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    padding: 16, 
+    borderRadius: 12 
+  },
+  partnerName: { 
+    color: '#ffffff', 
+    fontSize: 18, 
+    fontWeight: '700' 
+  },
+  partnerCity: { 
+    color: '#cbd5e1', 
+    fontSize: 13, 
+    marginTop: 2 
+  },
+  partnerDiscount: { 
+    color: '#fbbf24', 
+    fontSize: 14, 
+    fontWeight: '600', 
+    marginTop: 4 
+  },
 });
