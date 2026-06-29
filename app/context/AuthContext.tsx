@@ -1,122 +1,127 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+// app/context/AuthContext.tsx
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Crypto from 'expo-crypto';
+import { 
+  auth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  sendEmailVerification,
+  reload
+} from '../config/firebase';
 
 interface AuthContextType {
   user: any | null;
   loading: boolean;
-  signUp: (phoneNumber: string, password: string) => Promise<boolean>;
-  signIn: (phoneNumber: string, password: string) => Promise<boolean>;
+  signUp: (email: string, password: string) => Promise<boolean>;
+  signIn: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  resendVerification: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const hashPassword = async (password: string): Promise<string> => {
-  const digest = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    password
-  );
-  return digest;
-};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkStoredUser();
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        await reload(firebaseUser);
+        setUser(firebaseUser);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+    return unsubscribe;
   }, []);
 
-  const checkStoredUser = async () => {
+  // ==================== SIGN UP ====================
+  const signUp = async (email: string, password: string): Promise<boolean> => {
     try {
-      const userData = await AsyncStorage.getItem('userData');
-      if (userData) {
-        const parsed = JSON.parse(userData);
-        setUser(parsed);
-      }
-    } catch (error) {
-      console.log('Error loading user:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signUp = async (phoneNumber: string, password: string): Promise<boolean> => {
-    try {
-      const existingUser = await AsyncStorage.getItem('userData');
-      if (existingUser) {
-        const parsed = JSON.parse(existingUser);
-        if (parsed.phoneNumber === phoneNumber) {
-          Alert.alert('⚠️ Error', 'This phone number is already registered.');
-          return false;
-        }
-      }
-
-      const hashedPassword = await hashPassword(password);
-      const userData = {
-        phoneNumber,
-        password: hashedPassword,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString()
-      };
-
-      await AsyncStorage.setItem('userData', JSON.stringify(userData));
-      Alert.alert('✅ Success', 'Account created successfully! Please login.');
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCredential.user);
+      await signOut(auth);
+      setUser(null);
+      Alert.alert('✅ Check Your Email', 'Verification email sent! You can also login without verifying for now.');
       return true;
     } catch (error: any) {
-      console.log('Sign up error:', error);
-      Alert.alert('❌ Error', error.message || 'Failed to create account.');
+      let message = 'Failed to create account.';
+      if (error.code === 'auth/email-already-in-use') {
+        message = 'This email is already registered.';
+      } else if (error.code === 'auth/invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (error.code === 'auth/weak-password') {
+        message = 'Password must be at least 6 characters.';
+      }
+      Alert.alert('❌ Error', message);
       return false;
     }
   };
 
-  const signIn = async (phoneNumber: string, password: string): Promise<boolean> => {
+  // ==================== SIGN IN ====================
+  const signIn = async (email: string, password: string): Promise<boolean> => {
     try {
-      const userData = await AsyncStorage.getItem('userData');
-      if (!userData) {
-        Alert.alert('❌ Error', 'No account found. Please sign up first.');
-        return false;
-      }
-
-      const parsed = JSON.parse(userData);
-      const hashedInput = await hashPassword(password);
-
-      if (parsed.phoneNumber !== phoneNumber) {
-        Alert.alert('❌ Error', 'Phone number not found.');
-        return false;
-      }
-
-      if (parsed.password !== hashedInput) {
-        Alert.alert('❌ Error', 'Incorrect password.');
-        return false;
-      }
-
-      parsed.lastLogin = new Date().toISOString();
-      await AsyncStorage.setItem('userData', JSON.stringify(parsed));
-      setUser(parsed);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await reload(userCredential.user);
+      
+      // ✅ Verify စစ်တာကို ခဏပိတ်ထားပါ
+      // if (!userCredential.user.emailVerified) {
+      //   await signOut(auth);
+      //   setUser(null);
+      //   Alert.alert('⚠️ Email Not Verified', 'Please verify your email first.');
+      //   return false;
+      // }
+      
+      setUser(userCredential.user);
       Alert.alert('✅ Success', 'Welcome back!');
       return true;
     } catch (error: any) {
-      console.log('Sign in error:', error);
-      Alert.alert('❌ Error', error.message || 'Login failed.');
+      let message = 'Login failed.';
+      if (error.code === 'auth/user-not-found') {
+        message = 'No account found. Please sign up first.';
+      } else if (error.code === 'auth/wrong-password') {
+        message = 'Incorrect password.';
+      } else if (error.code === 'auth/invalid-email') {
+        message = 'Please enter a valid email.';
+      } else if (error.code === 'auth/too-many-requests') {
+        message = 'Too many attempts. Try again later.';
+      }
+      Alert.alert('❌ Error', message);
       return false;
     }
   };
 
+  // ==================== RESEND VERIFICATION ====================
+  const resendVerification = async (): Promise<void> => {
+    try {
+      if (auth.currentUser) {
+        await sendEmailVerification(auth.currentUser);
+        Alert.alert('✅ Resent', 'Verification email resent.');
+      } else {
+        Alert.alert('Error', 'No user found. Please sign up first.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to resend.');
+    }
+  };
+
+  // ==================== LOGOUT ====================
   const logout = async () => {
     try {
+      await signOut(auth);
       setUser(null);
       Alert.alert('✅ Logged Out', 'You have been logged out.');
-    } catch (error: any) {
-      console.log('Logout error:', error);
-      Alert.alert('❌ Error', 'Failed to log out.');
+    } catch (error) {
+      Alert.alert('❌ Error', 'Failed to logout.');
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, logout }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signIn, logout, resendVerification }}>
       {children}
     </AuthContext.Provider>
   );
@@ -124,11 +129,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
-
-// Default export ထည့်ပါ
-export default AuthProvider;

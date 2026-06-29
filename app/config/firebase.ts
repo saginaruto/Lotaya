@@ -1,18 +1,34 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// app/config/firebase.ts
+import { initializeApp, getApps } from 'firebase/app';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  sendEmailVerification,
+  reload
+} from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCUMfFf9t9Ev3Tc9E-89vYF8SDhkfuND9k",
+  authDomain: "lifeos-1a0af.firebaseapp.com",
+  projectId: "lifeos-1a0af",
+  storageBucket: "lifeos-1a0af.firebasestorage.app",
+  messagingSenderId: "189466565186",
+  appId: "1:189466565186:web:d6144a7cb28251a097ebdb",
+  measurementId: "G-L965KJB5EC"
 };
 
-const app = initializeApp(firebaseConfig);
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 
-// AsyncStorage ကို သီးခြားသိမ်းဆည်းပါ
-export { auth, AsyncStorage };
+export { 
+  auth,
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  sendEmailVerification,
+  reload
+};

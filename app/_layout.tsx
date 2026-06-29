@@ -1,7 +1,8 @@
+// app/_layout.tsx
 import React from 'react';
 import { Stack } from 'expo-router';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import LoginScreen from './login';
+import LoginScreen from './login';  // ← ဒီနေရာမှာ ./login ဖြစ်ဖို့လိုတယ်
 import { View, ActivityIndicator } from 'react-native';
 
 function RootLayout() {
@@ -22,6 +23,15 @@ function RootLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="ad-watch" options={{ headerShown: false }} />
+      <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+      <Stack.Screen name="my-balance" options={{ headerShown: false }} />
+      <Stack.Screen name="notification" options={{ headerShown: false }} />
+      <Stack.Screen name="partner-detail" options={{ headerShown: false }} />
+      <Stack.Screen name="transaction-history" options={{ headerShown: false }} />
+      <Stack.Screen name="lottery-participants" options={{ headerShown: false }} />
+      <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+      <Stack.Screen name="reset-password" options={{ headerShown: false }} />
     </Stack>
   );
 }

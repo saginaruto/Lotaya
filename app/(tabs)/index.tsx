@@ -297,7 +297,6 @@ export default function HomeScreen() {
               date: new Date().toLocaleDateString(),
             });
 
-            // AsyncStorage ကိုလည်း update လုပ်ပါ
             const currentWallet = await getWallet();
             currentWallet.balance = GLOBAL_WALLET.balance;
             currentWallet.activities = GLOBAL_WALLET.activities;
@@ -327,10 +326,8 @@ export default function HomeScreen() {
   };
 
   const refreshAllData = async () => {
-    // AsyncStorage ကနေ ပြန်ဖတ်ပါ
     const savedWallet = await getWallet();
     
-    // GLOBAL_WALLET ကို update လုပ်ပါ
     GLOBAL_WALLET.balance = savedWallet.balance;
     GLOBAL_WALLET.totalEarned = savedWallet.totalEarned;
     GLOBAL_WALLET.activities = savedWallet.activities;
@@ -439,25 +436,57 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, [eduIndex, healthIndex]);
 
-  const adPan = useRef(new Animated.ValueXY({ x: SCREEN_WIDTH - 90, y: SCREEN_HEIGHT - 280 })).current;
-
-  const checkCollision = (pos1: {x: number, y: number}, pos2: {x: number, y: number}) => {
-    const size = WIDGET_SIZE;
-    return !(pos1.x + size < pos2.x || pos2.x + size < pos1.x || pos1.y + size < pos2.y || pos2.y + size < pos1.y);
-  };
+  // ======================== FLOATING WIDGET WITH BOUNDARIES ========================
+  const adPan = useRef(new Animated.ValueXY({ 
+    x: SCREEN_WIDTH - 90, 
+    y: SCREEN_HEIGHT - 250 
+  })).current;
 
   const adPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        adPan.setOffset({ x: (adPan.x as any)._value, y: (adPan.y as any)._value });
+        adPan.setOffset({ 
+          x: (adPan.x as any)._value, 
+          y: (adPan.y as any)._value 
+        });
         adPan.setValue({ x: 0, y: 0 });
       },
       onPanResponderMove: (e, gesture) => {
-        adPan.setValue({ x: gesture.dx, y: gesture.dy });
+        const offsetX = (adPan.x as any)._offset;
+        const offsetY = (adPan.y as any)._offset;
+        
+        let newX = offsetX + gesture.dx;
+        let newY = offsetY + gesture.dy;
+
+        // ==================== SCREEN BOUNDARIES ====================
+        const SAFE_TOP = 70;      // Header အောက်မှာ ထားဖို့
+        const SAFE_BOTTOM = 50;   // Tab bar အထက်မှာ ထားဖို့
+        const SAFE_LEFT = 10;
+        const SAFE_RIGHT = 10;
+
+        if (newY < SAFE_TOP) {
+          newY = SAFE_TOP;
+        }
+        if (newY > SCREEN_HEIGHT - WIDGET_SIZE - SAFE_BOTTOM) {
+          newY = SCREEN_HEIGHT - WIDGET_SIZE - SAFE_BOTTOM;
+        }
+        if (newX < SAFE_LEFT) {
+          newX = SAFE_LEFT;
+        }
+        if (newX > SCREEN_WIDTH - WIDGET_SIZE - SAFE_RIGHT) {
+          newX = SCREEN_WIDTH - WIDGET_SIZE - SAFE_RIGHT;
+        }
+
+        adPan.setValue({ 
+          x: newX - offsetX, 
+          y: newY - offsetY 
+        });
       },
-      onPanResponderRelease: () => { adPan.flattenOffset(); },
+      onPanResponderRelease: () => { 
+        adPan.flattenOffset(); 
+      },
     })
   ).current;
 

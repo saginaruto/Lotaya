@@ -183,8 +183,8 @@ export default function SettingsScreen() {
             subtitle={`Version ${appVersion}`}
             onPress={() => {
               Alert.alert(
-                'About LifeOS',
-                `Version: ${appVersion}\n\nLifeOS is a fun and rewarding app where you can earn RP points by watching ads and playing Lucky Draw.`,
+                'About Lotaya',
+                `Version: ${appVersion}\n\nLotaya is a fun and rewarding app where you can earn RP points by watching ads and playing Lucky Draw.`,
                 [{ text: 'OK' }]
               );
             }}
