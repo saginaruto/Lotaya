@@ -1,2 +1,0 @@
-# lifeos
-app
