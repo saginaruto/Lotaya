@@ -18,7 +18,9 @@ import {
   limit,
   DocumentData,
   QueryDocumentSnapshot,
-  DocumentSnapshot
+  DocumentSnapshot,
+  arrayUnion,        // ✅ ထပ်ထည့် - FCM Token array အတွက်
+  arrayRemove         // ✅ ထပ်ထည့် - FCM Token ဖယ်ရှားရန်
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
@@ -43,23 +45,40 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
-// ✅ requestFCMToken ကို export လုပ်ပါ
+// ✅ Messaging Instance ကို Cache လုပ်မယ်
 let messagingInstance: any = null;
+let isMessagingSupported: boolean | null = null;
 
 export const getMessagingInstance = async () => {
   if (typeof window === 'undefined') return null;
+  
+  // ✅ isSupported ကို တစ်ခါပဲ စစ်
+  if (isMessagingSupported === null) {
+    try {
+      isMessagingSupported = await messagingModule.isSupported();
+    } catch {
+      isMessagingSupported = false;
+    }
+  }
+  
+  if (!isMessagingSupported) return null;
+  
   if (!messagingInstance) {
-    const supported = await messagingModule.isSupported();
-    if (supported) {
+    try {
       messagingInstance = messagingModule.getMessaging(app);
+    } catch (error) {
+      console.error('❌ Failed to get messaging instance:', error);
+      return null;
     }
   }
   return messagingInstance;
 };
 
+// ✅ FCM Token ရယူရန် Function (ပြင်ဆင်ပြီး)
 export const requestFCMToken = async (userId: string) => {
   if (typeof window === 'undefined') return null;
 
+  // ✅ Notification Permission စစ်
   if (Notification.permission === 'denied') {
     console.warn('⚠️ Notification permission is blocked');
     return null;
@@ -75,44 +94,114 @@ export const requestFCMToken = async (userId: string) => {
 
   try {
     const messaging = await getMessagingInstance();
-    if (!messaging) return null;
+    if (!messaging) {
+      console.warn('⚠️ Messaging not supported');
+      return null;
+    }
 
+    // ✅ Service Worker Register - အရင်ဆုံးလုပ်
+    let registration: ServiceWorkerRegistration | null = null;
     if ('serviceWorker' in navigator) {
       try {
-        await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        console.log('✅ FCM Service Worker registered');
+        // ✅ အရင်ဆုံး ရှိပြီးသား registration ကိုရှာ
+        const existingReg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+        if (existingReg) {
+          registration = existingReg;
+          console.log('✅ Existing FCM Service Worker found');
+        } else {
+          // မရှိရင် အသစ် register လုပ်
+          registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          console.log('✅ FCM Service Worker registered');
+        }
       } catch (swError) {
         console.warn('⚠️ FCM Service Worker registration failed:', swError);
+        // Service Worker မရှိရင်လည်း token ရယူကြည့်
       }
     }
 
     const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || '';
-    const token = await (messagingModule as any).getToken(messaging, { vapidKey });
+    if (!vapidKey) {
+      console.warn('⚠️ VAPID key is missing');
+      return null;
+    }
+
+    // ✅ Token ရယူ - serviceWorkerRegistration ထည့်ပြီး
+    let token: string;
+    if (registration) {
+      token = await (messagingModule as any).getToken(messaging, { 
+        vapidKey,
+        serviceWorkerRegistration: registration 
+      });
+    } else {
+      token = await (messagingModule as any).getToken(messaging, { vapidKey });
+    }
 
     if (token) {
+      // ✅ Token ကို Firestore မှာ array အနေနဲ့ သိမ်း
       const userRef = doc(db, 'users', userId);
-      await setDoc(userRef, { fcmToken: token }, { merge: true });
+      await setDoc(userRef, { 
+        fcmTokens: arrayUnion(token) 
+      }, { merge: true });
       console.log('✅ FCM Token saved:', token);
       return token;
+    } else {
+      console.log('ℹ️ No FCM token received');
+      return null;
     }
   } catch (error) {
-    console.error('Error getting FCM token:', error);
+    console.error('❌ Error getting FCM token:', error);
+    return null;
   }
-  return null;
 };
 
+// ✅ FCM Token ကို ဖယ်ရှားရန် Function (အသစ်ထည့်)
+export const removeFCMToken = async (userId: string, token: string) => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      fcmTokens: arrayRemove(token)
+    });
+    console.log('✅ FCM Token removed');
+  } catch (error) {
+    console.error('❌ Error removing FCM token:', error);
+  }
+};
+
+// ✅ Foreground Message Listener (ပြင်ဆင်ပြီး)
 export const listenForMessages = async (callback: (payload: any) => void) => {
   if (typeof window === 'undefined') return;
+  
   try {
     const messaging = await getMessagingInstance();
-    if (!messaging) return;
+    if (!messaging) {
+      console.warn('⚠️ Messaging not supported, cannot listen for messages');
+      return;
+    }
+    
+    // ✅ onMessage ကို မှန်ကန်စွာ သုံး
     messagingModule.onMessage(messaging, (payload) => {
-      console.log('📱 Message received:', payload);
+      console.log('📱 Foreground message received:', payload);
       callback(payload);
     });
   } catch (error) {
-    console.error('Error listening for messages:', error);
+    console.error('❌ Error listening for messages:', error);
   }
+};
+
+// ✅ Notification Permission စစ်ရန် Helper (အသစ်ထည့်)
+export const checkNotificationPermission = async (): Promise<boolean> => {
+  if (typeof window === 'undefined') return false;
+  
+  if (Notification.permission === 'granted') return true;
+  
+  if (Notification.permission === 'default') {
+    const result = await Notification.requestPermission();
+    return result === 'granted';
+  }
+  
+  return false;
 };
 
 // Export functions
@@ -131,6 +220,8 @@ export {
   serverTimestamp,
   writeBatch,
   limit,
+  arrayUnion,    // ✅ ထပ်ထည့်
+  arrayRemove,   // ✅ ထပ်ထည့်
 };
 
 export type {

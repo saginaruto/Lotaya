@@ -103,7 +103,7 @@ export default function SellerSalesReportPage() {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
           <Link href="/seller/dashboard" style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <ArrowLeft size={20} /> Back to dashboard
+            <ArrowLeft size={20} />
           </Link>
           <h1 style={{ margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}><BarChart3 size={24} /> Sales Report</h1>
         </header>

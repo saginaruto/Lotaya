@@ -285,7 +285,6 @@ export default function ManageProducts() {
               style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
             >
               <ArrowLeft size={20} />
-              {t('common.back')}
             </Link>
             <h1 style={{ color: '#ffffff', fontSize: '20px', fontWeight: '700', margin: 0 }}>
               {t('Products')}

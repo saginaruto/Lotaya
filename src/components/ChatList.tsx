@@ -106,7 +106,7 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
               if (onChatSelect) {
                 onChatSelect(chat.id);
               } else {
-                router.push(`/chat/${chat.id}`);
+                router.push(`/messages/${chat.id}`);
               }
             }}
             style={{

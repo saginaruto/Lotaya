@@ -151,7 +151,6 @@ export default function AddProduct() {
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <Link href="/seller/dashboard" style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '14px' }}>
           <ArrowLeft size={18} />
-          {t('common.back')}
         </Link>
 
         <div style={{

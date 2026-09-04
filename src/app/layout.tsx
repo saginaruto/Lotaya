@@ -21,7 +21,16 @@ export default function RootLayout({
         try {
           setLanguage('en');
 
+          // ✅ FCM Token ရယူရန် - Service Worker ကို ဦးစွာ Register လုပ်
           try {
+            // Service Worker ကို အရင်ဆုံး Register လုပ်ပါ
+            if ('serviceWorker' in navigator) {
+              // ✅ firebase-messaging-sw.js ကို ဦးစွာ Register လုပ်
+              await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+              console.log('✅ Firebase Messaging SW registered');
+            }
+            
+            // ပြီးမှ FCM Token ရယူပါ
             await requestFCMToken(user.uid);
           } catch (error) {
             console.warn('FCM token request failed:', error);
@@ -35,13 +44,13 @@ export default function RootLayout({
     return () => unsubscribe();
   }, []);
 
-  // ✅ Register Service Worker
+  // ✅ Service Worker (PWA) အတွက်
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
-        .then((reg) => console.log('✅ Service Worker registered:', reg))
-        .catch((err) => console.log('❌ Service Worker registration failed:', err));
+        .then((reg) => console.log('✅ PWA Service Worker registered:', reg))
+        .catch((err) => console.log('❌ PWA Service Worker registration failed:', err));
     }
   }, []);
 
@@ -56,6 +65,9 @@ export default function RootLayout({
       <meta name="mobile-web-app-capable" content="yes" />
       <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       <link rel="icon" href="/icons/icon-192.png" />
+      
+      {/* ✅ Firebase Messaging Service Worker အတွက် Scope သတ်မှတ် */}
+      <link rel="service-worker" href="/firebase-messaging-sw.js" />
     </>
   );
 

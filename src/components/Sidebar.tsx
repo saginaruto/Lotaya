@@ -48,13 +48,11 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
     }
   };
 
-  // ✅ Add Buyer Account (သီးသန့်အကောင့်)
   const handleAddBuyerAccount = () => {
     setIsSidebarOpen(false);
     router.push('/signup?role=buyer');
   };
 
-  // ✅ Add Seller Account (သီးသန့်အကောင့်)
   const handleAddSellerAccount = () => {
     setIsSidebarOpen(false);
     router.push('/signup?role=seller');
@@ -74,7 +72,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
         'sidebar.settings': 'ဆက်တင်များ',
         'sidebar.help': 'အကူအညီ',
         'sidebar.logout': 'ထွက်မည်',
-        'Chat': 'စကားပြောခန်း',
+        'Messages': 'ဝင်စာများ',
         'sidebar.addBuyer': 'ဝယ်ယူသူအကောင့်ဖွင့်မည်',
         'sidebar.addSeller': 'ရောင်းချသူအကောင့်ဖွင့်မည်',
         'sidebar.sellNow': 'ရောင်းမည်',
@@ -91,7 +89,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
         'sidebar.settings': 'Settings',
         'sidebar.help': 'Help & Support',
         'sidebar.logout': 'Log Out',
-        'Chat': 'Chat',
+        'Messages': 'Messages',
         'sidebar.addBuyer': 'Create Buyer Account',
         'sidebar.addSeller': 'Create Seller Account',
         'sidebar.sellNow': 'Sell Now',
@@ -114,6 +112,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
 
   return (
     <>
+      {/* Overlay */}
       <div 
         onClick={() => setIsSidebarOpen(false)}
         style={{
@@ -127,6 +126,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
         }}
       />
 
+      {/* Sidebar */}
       <aside 
         style={{
           position: "fixed",
@@ -181,6 +181,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
           >
             {user ? (
               <>
+                {/* User Profile */}
                 <Link
                   href="/profile"
                   onClick={() => setIsSidebarOpen(false)}
@@ -257,7 +258,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                   </div>
                 </Link>
 
-                {/* ✅ Add Account Buttons - သီးသန့်အကောင့်ဖွင့်ဖို့ */}
+                {/* Add Account Buttons */}
                 {currentRole === 'seller' && (
                   <button
                     onClick={handleAddBuyerAccount}
@@ -356,7 +357,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                     <span>{t('sidebar.profile')}</span>
                   </Link>
                   
-                  {(currentRole === 'seller') && (
+                  {currentRole === 'seller' && (
                     <Link
                       href="/seller/dashboard"
                       onClick={() => setIsSidebarOpen(false)}
@@ -379,8 +380,9 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                     </Link>
                   )}
 
+                  {/* ✅ Messages Link - ပြင်ဆင်ထားပြီး */}
                   <Link
-                    href="/chat"
+                    href="/messages"
                     onClick={() => setIsSidebarOpen(false)}
                     style={{
                       display: "flex",
@@ -397,7 +399,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                     }}
                   >
                     <span style={{ fontSize: "18px" }}>💬</span>
-                    <span>{t('Chat')}</span>
+                    <span>{t('Messages')}</span>
                   </Link>
                 </div>
               </>

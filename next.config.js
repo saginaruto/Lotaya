@@ -1,10 +1,4 @@
 // next.config.js
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -28,8 +22,40 @@ const nextConfig = {
     ],
   },
   
-  // ✅ Turbopack config ထည့်ပါ (အလုပ်မလုပ်ရင် ဖယ်ထားလို့ရ)
+  // ✅ Turbopack config (အလုပ်မလုပ်ရင် ဖယ်ထားလို့ရ)
   turbopack: {},
+  
+  // ✅ Service Worker ဖိုင်တွေအတွက် Cache-Control သတ်မှတ်
+  async headers() {
+    return [
+      {
+        source: '/firebase-messaging-sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+    ];
+  },
 };
+
+// ✅ PWA Plugin - development မှာ disable လုပ်ထားပြီးသား
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+});
 
 module.exports = withPWA(nextConfig);

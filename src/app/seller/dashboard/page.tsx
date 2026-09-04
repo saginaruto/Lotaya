@@ -268,10 +268,9 @@ export default function SellerDashboard() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <Link href="/" style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <ArrowLeft size={20} />
-            {t('common.backToHome')}
           </Link>
           <h1 style={{ color: '#ffffff', fontSize: '24px', fontWeight: '700', margin: 0 }}>
-            📊 {t('dashboard.title')}
+            {t('dashboard.title')}
           </h1>
         </div>
 
@@ -284,7 +283,7 @@ export default function SellerDashboard() {
           marginBottom: '24px'
         }}>
           <h2 style={{ color: '#ffffff', fontSize: '18px', margin: 0 }}>
-            {t('dashboard.welcomeBack')}, <span style={{ color: '#FFD700' }}>{userData.username || 'Seller'}</span>
+            {t('Welcome back')}, <span style={{ color: '#FFD700' }}>{userData.username || 'Seller'}</span>
           </h2>
           <p style={{ color: '#888888', fontSize: '14px', marginTop: '4px' }}>
             {t('dashboard.youHave')} <strong style={{ color: '#38bdf8' }}>{products.length}</strong> {t('dashboard.productsInShop')}

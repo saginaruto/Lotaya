@@ -422,10 +422,9 @@ export default function SellerSettings() {
               style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
             >
               <ArrowLeft size={18} />
-              {language === 'my' ? 'နောက်သို့' : 'Back'}
             </Link>
             <h1 style={{ color: '#ffffff', fontSize: '18px', fontWeight: '700', margin: 0 }}>
-              ⚙️ {language === 'my' ? 'ဆက်တင်များ' : 'Settings'}
+              {language === 'my' ? 'ဆက်တင်များ' : 'Settings'}
             </h1>
           </div>
         </div>

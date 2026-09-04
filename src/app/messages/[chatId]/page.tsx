@@ -51,7 +51,14 @@ export default function ChatRoomPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#000000', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        color: '#ffffff' 
+      }}>
         Loading...
       </div>
     );
@@ -60,13 +67,22 @@ export default function ChatRoomPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '16px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto', height: 'calc(100vh - 32px)' }}>
+        {/* Back Button - ✅ ပြင်ဆင်ပြီး */}
         <div style={{ marginBottom: '16px' }}>
           <Link
-            href="/chat"
-            style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            href="/messages"
+            style={{ 
+              color: '#38bdf8', 
+              textDecoration: 'none', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '6px' 
+            }}
           >
             <ArrowLeft size={18} />
-            <span style={{ fontSize: '13px' }}>{language === 'my' ? 'နောက်သို့' : 'Back'}</span>
+            <span style={{ fontSize: '13px' }}>
+              {language === 'my' ? 'နောက်သို့' : 'Back'}
+            </span>
           </Link>
         </div>
 

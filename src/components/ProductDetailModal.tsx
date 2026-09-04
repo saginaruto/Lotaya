@@ -105,7 +105,7 @@ export default function ProductDetailModal({
       onClose();
       
       setTimeout(() => {
-        router.push(`/chat/${targetChatId}`);
+        router.push(`/messages/${targetChatId}`);
       }, 300);
     } catch (error) {
       console.error('❌ Error finding chat:', error);
@@ -153,7 +153,7 @@ export default function ProductDetailModal({
         <X size={24} />
       </button>
 
-      {/* ====== Product Image with Shop Logo Overlay ====== */}
+      {/* ====== Product Image with OVERLAY + MARQUEE ====== */}
       <div
         style={{
           width: "100%",
@@ -204,6 +204,80 @@ export default function ProductDetailModal({
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
+        </div>
+
+        {/* ====== 🆕 OVERLAY LOCATION + MARQUEE - ပုံအောက်ခြေမှာ အမြဲမြင်ရမယ် ====== */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 70%, transparent 100%)",
+            padding: "12px 16px 10px 16px",
+            zIndex: 5,
+            overflow: "hidden"
+          }}
+        >
+          {/* Marquee Container */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              overflow: "hidden",
+              position: "relative"
+            }}
+          >
+            <MapPin size={14} style={{ color: "#F59E0B", flexShrink: 0 }} />
+            
+            <div
+              style={{
+                flex: 1,
+                minWidth: 0,
+                overflow: "hidden",
+                position: "relative"
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-block",
+                  whiteSpace: "nowrap",
+                  animation: "marquee 15s linear infinite",
+                  paddingLeft: "100%"
+                }}
+              >
+                {/* Location - အပြာရောင် */}
+                <span
+                  style={{
+                    fontSize: "13px",
+                    color: "#38bdf8",
+                    fontWeight: "400"
+                  }}
+                >
+                  {product?.location || "Location not specified"}
+                </span>
+                
+                {/* Phone Icon + Number - အဝါရောင် */}
+                {sellerPhone && (
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "#F59E0B",
+                      fontWeight: "500",
+                      marginLeft: "20px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px"
+                    }}
+                  >
+                    <Phone size={13} style={{ color: "#22c55e" }} />
+                    {sellerPhone}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -354,67 +428,8 @@ export default function ProductDetailModal({
           </div>
         )}
 
-        {/* ====== Marquee Location + Phone ====== */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            flexShrink: 0,
-            marginTop: "4px",
-            overflow: "hidden"
-          }}
-        >
-          <MapPin size={14} style={{ color: "#F59E0B", flexShrink: 0 }} />
-          
-          {/* ====== Marquee Container ====== */}
-          <div
-            style={{
-              flex: 1,
-              minWidth: 0,
-              overflow: "hidden",
-              position: "relative"
-            }}
-          >
-            <div
-              style={{
-                display: "inline-block",
-                whiteSpace: "nowrap",
-                animation: "marquee 15s linear infinite",
-                paddingLeft: "100%"
-              }}
-            >
-              {/* Location - အဖြူရောင် */}
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#ffffff",
-                  fontWeight: "400"
-                }}
-              >
-                {product?.location}
-              </span>
-            
-              {/* Phone Icon + Number - အဝါရောင် */}
-              {sellerPhone && (
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#FCD34D",
-                    fontWeight: "500",
-                    marginLeft: "16px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px"
-                  }}
-                >
-                  <Phone size={12} style={{ color: "#22c55e" }} />
-                  {sellerPhone}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* ====== အောက်ဆုံးက Marquee ကို ဖယ်လိုက်ပြီ ====== */}
+        {/* မလိုတော့ဘူးဆိုတော့ ဒီနေရာမှာ ဘာမှမထည့်ပါနဲ့ */}
       </div>
 
       <style>{`

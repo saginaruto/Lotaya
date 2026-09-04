@@ -167,7 +167,6 @@ export default function ProfilePage() {
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <Link href="/" style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
           <ArrowLeft size={20} />
-          {t('common.backToHome')}
         </Link>
 
         <div style={{

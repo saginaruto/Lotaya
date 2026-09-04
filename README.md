@@ -3,48 +3,73 @@ Digital Shop
 # DSaing
 
 DSAING/
-├── .gitignore
+.
 ├── README.md
 ├── cors.json
+├── dataconnect
+│   ├── dataconnect.yaml
+│   ├── example
+│   │   ├── connector.yaml
+│   │   ├── mutations.gql
+│   │   └── queries.gql
+│   ├── schema
+│   │   └── schema.gql
+│   └── seed_data.gql
+├── firebase.json
+├── firestore.rules
 ├── next-env.d.ts
-├── package.json
+├── next.config.js
 ├── package-lock.json
-├── tsconfig.json
-├── public/
-│   ├── firebase-messaging-sw.js
-│   ├── icons/
+├── package.json
+├── public
+│   ├── icons
+│   │   ├── app-icon.svg
+│   │   ├── icon-192x192.png
+│   │   ├── icon-512x512.png
+│   │   └── logo.svg
 │   ├── index.html
+│   ├── logo.png
 │   ├── manifest.json
-│   ├── screenshots/
-│   ├── sounds/
+│   ├── screenshots
+│   │   ├── desktop-home.jpg
+│   │   └── mobile-home.jpg
+│   ├── sounds
+│   │   └── notification.mp3
 │   └── sw.js
-├── src/
-│   ├── app/
-│   │   ├── chat/
-│   │   │   ├── page.tsx
-│   │   │   └── [chatId]/
-│   │   │       └── page.tsx
+├── src
+│   ├── app
+│   │   ├── chat
+│   │   │   ├── [chatId]
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
 │   │   ├── globals.css
 │   │   ├── layout.tsx
-│   │   ├── login/
+│   │   ├── login
 │   │   │   └── page.tsx
 │   │   ├── page.tsx
-│   │   ├── profile/
+│   │   ├── profile
 │   │   │   └── page.tsx
-│   │   ├── seller/
-│   │   │   ├── dashboard/
+│   │   ├── seller
+│   │   │   ├── dashboard
 │   │   │   │   └── page.tsx
-│   │   │   ├── products/
-│   │   │   │   ├── page.tsx
-│   │   │   │   └── new/
-│   │   │   │       └── page.tsx
-│   │   │   └── settings/
+│   │   │   ├── orders
+│   │   │   │   └── page.tsx
+│   │   │   ├── products
+│   │   │   │   ├── new
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── sales-report
+│   │   │   │   └── page.tsx
+│   │   │   └── settings
 │   │   │       └── page.tsx
-│   │   ├── settings/
+│   │   ├── settings
 │   │   │   └── page.tsx
-│   │   └── signup/
+│   │   ├── shop
+│   │   │   └── [sellerId]
+│   │   │       └── page.tsx
+│   │   └── signup
 │   │       └── page.tsx
-│   ├── components/
+│   ├── components
 │   │   ├── BannerSlider.tsx
 │   │   ├── CartSidebar.tsx
 │   │   ├── CategoryAds.tsx
@@ -57,27 +82,47 @@ DSAING/
 │   │   ├── NotificationProvider.tsx
 │   │   ├── NotificationToggle.tsx
 │   │   ├── ProductDetailModal.tsx
-│   │   ├── SalesStats.tsx
 │   │   ├── SearchResults.tsx
 │   │   ├── Sidebar.tsx
 │   │   ├── SplashScreen.tsx
 │   │   └── ToastNotification.tsx
-│   ├── data/
+│   ├── data
 │   │   ├── Ads.ts
 │   │   ├── banners.ts
 │   │   ├── categories.ts
 │   │   ├── categoryAds.ts
 │   │   └── cities.ts
-│   ├── hooks/
+│   ├── dataconnect-generated
+│   │   ├── README.md
+│   │   ├── esm
+│   │   │   ├── index.esm.js
+│   │   │   └── package.json
+│   │   ├── index.cjs.js
+│   │   ├── index.d.ts
+│   │   ├── package.json
+│   │   └── react
+│   │       ├── README.md
+│   │       ├── esm
+│   │       │   ├── index.esm.js
+│   │       │   └── package.json
+│   │       ├── index.cjs.js
+│   │       ├── index.d.ts
+│   │       └── package.json
+│   ├── hooks
 │   │   ├── useAutoSlide.ts
 │   │   └── useNotifications.ts
-│   ├── lib/
+│   ├── lib
+│   │   ├── ReceiptNumber.ts
 │   │   ├── chat.ts
+│   │   ├── cloudinary.ts
 │   │   ├── firebase.ts
 │   │   └── translations.ts
 │   ├── next-env.d.ts
-│   ├── styles/
+│   ├── styles
 │   │   └── menuButtonStyle.ts
-│   └── types/
+│   └── types
 │       └── index.ts
-└── .gitignore# D_saing
+├── tsconfig.json
+└── tsconfig.tsbuildinfo
+
+35 directories, 86 files

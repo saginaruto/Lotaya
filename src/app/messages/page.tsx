@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
-export default function ChatPage() {
+export default function MessagesPage() {
   const router = useRouter();
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [language, setLanguage] = useState<string>('en');
@@ -50,7 +50,14 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#000000', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        color: '#ffffff' 
+      }}>
         Loading...
       </div>
     );
@@ -59,6 +66,7 @@ export default function ChatPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '16px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto', height: 'calc(100vh - 32px)' }}>
+        {/* Header */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -67,16 +75,30 @@ export default function ChatPage() {
         }}>
           <Link
             href="/"
-            style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            style={{ 
+              color: '#38bdf8', 
+              textDecoration: 'none', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '6px' 
+            }}
           >
             <ArrowLeft size={18} />
-            <span style={{ fontSize: '13px' }}>{language === 'my' ? 'နောက်သို့' : 'Back'}</span>
+            <span style={{ fontSize: '14px' }}>
+              {language === 'my' ? 'နောက်သို့' : 'Back'}
+            </span>
           </Link>
-          <h1 style={{ color: '#ffffff', fontSize: '18px', fontWeight: '700', margin: 0 }}>
-            {language === 'my' ? 'စကားပြောခန်း' : 'Chat'}
+          <h1 style={{ 
+            color: '#ffffff', 
+            fontSize: '18px', 
+            fontWeight: '700', 
+            margin: 0 
+          }}>
+            {language === 'my' ? 'ဝင်စာများ' : 'Messages'}
           </h1>
         </div>
 
+        {/* Chat Container */}
         <div style={{
           backgroundColor: '#121212',
           border: '1px solid #262626',
