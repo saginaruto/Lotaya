@@ -25,7 +25,6 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
     });
   }, []);
 
-  // Get language
   useEffect(() => {
     if (!user) return;
 
@@ -42,7 +41,6 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
     return () => unsubscribeLang();
   }, [user]);
 
-  // Get chats and listen for new messages
   useEffect(() => {
     if (!user) return;
 
@@ -57,17 +55,61 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
     };
   }, [user]);
 
+  // ✅ ရက်စွဲနဲ့ အချိန် Format လုပ်တဲ့ Function
+  const formatChatTime = (timestamp: any): string => {
+    if (!timestamp) return '';
+    
+    try {
+      // Firestore Timestamp ဖြစ်ရင် toDate() သုံး
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      
+      // Invalid Date ဖြစ်မဖြစ်စစ်
+      if (isNaN(date.getTime())) return '';
+      
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      
+      // ✅ ဒီနေ့ပို့တာ → အချိန်ပြမယ်
+      if (msgDate.getTime() === today.getTime()) {
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      }
+      
+      // ✅ မနေ့ကပို့တာ → "Yesterday"
+      if (msgDate.getTime() === yesterday.getTime()) {
+        return 'Yesterday';
+      }
+      
+      // ✅ ဒီနှစ်ထဲကပို့တာ → လ/ရက်
+      if (date.getFullYear() === now.getFullYear()) {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+      
+      // ✅ ဟောင်းနေပြီဆိုရင် → လ/ရက်/နှစ်
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
+    }
+  };
+
   const t = (key: string) => {
     const translations: Record<string, Record<string, string>> = {
       my: {
         'No messages yet': 'စာမရှိသေးပါ',
         'Unnamed Chat': 'အမည်မသိ စကားပြောခန်း',
         'Loading...': 'ဝင်နေသည်...',
+        'Yesterday': 'မနေ့က',
       },
       en: {
         'No messages yet': 'No messages yet',
         'Unnamed Chat': 'Unnamed Chat',
         'Loading...': 'Loading...',
+        'Yesterday': 'Yesterday',
       }
     };
     return translations[language]?.[key] || translations.en[key] || key;
@@ -81,9 +123,7 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
     );
   }
 
-  const filteredChats = chats;
-
-  if (filteredChats.length === 0) {
+  if (chats.length === 0) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', color: '#888888' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
@@ -94,10 +134,11 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      {filteredChats.map((chat) => {
-        // ✅ တိုက်ရိုက်ယူသုံးရန်
+      {chats.map((chat) => {
         const displayName = chat.otherUserName || t('Unnamed Chat');
         const displayPhoto = chat.otherUserPhoto || null;
+        const hasUnread = chat.unreadCount > 0;
+        const timeString = formatChatTime(chat.lastMessageTime);
 
         return (
           <div
@@ -114,17 +155,17 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
               alignItems: 'center',
               gap: '12px',
               padding: '12px 16px',
-              backgroundColor: '#121212',
+              backgroundColor: hasUnread ? '#1a1a2e' : '#121212',
               borderRadius: '12px',
-              border: chat.unreadCount > 0 ? '2px solid #38bdf8' : '1px solid #262626',
+              border: hasUnread ? '2px solid #38bdf8' : '1px solid #262626',
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#1a1a1a';
+              e.currentTarget.style.backgroundColor = hasUnread ? '#1e1e3a' : '#1a1a1a';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#121212';
+              e.currentTarget.style.backgroundColor = hasUnread ? '#1a1a2e' : '#121212';
             }}
           >
             {/* Profile Picture */}
@@ -138,7 +179,7 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
                     height: '48px',
                     borderRadius: '50%',
                     objectFit: 'cover',
-                    border: '2px solid #262626'
+                    border: hasUnread ? '2px solid #38bdf8' : '2px solid #262626'
                   }}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=38bdf8&color=ffffff&size=48';
@@ -150,56 +191,78 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
                     width: '48px',
                     height: '48px',
                     borderRadius: '50%',
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: hasUnread ? '#1a1a3a' : '#1a1a1a',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#ffffff',
+                    color: hasUnread ? '#38bdf8' : '#ffffff',
                     fontSize: '20px',
                     fontWeight: '600',
-                    border: '2px solid #262626'
+                    border: hasUnread ? '2px solid #38bdf8' : '2px solid #262626'
                   }}
                 >
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
+              
+              {/* Unread Badge */}
+              {hasUnread && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    backgroundColor: '#38bdf8',
+                    color: '#000000',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    padding: '2px 6px',
+                    borderRadius: '10px',
+                    minWidth: '18px',
+                    textAlign: 'center'
+                  }}
+                >
+                  {chat.unreadCount}
+                </div>
+              )}
             </div>
 
+            {/* Chat Info */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ 
                   color: '#ffffff', 
                   fontSize: '14px', 
-                  fontWeight: '600',
+                  fontWeight: hasUnread ? '700' : '600',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  maxWidth: '70%'
+                  maxWidth: '60%'
                 }}>
                   {displayName}
                 </div>
-                {chat.unreadCount > 0 && (
+                
+                {/* ✅ အချိန်/ရက်စွဲ ပြမယ် */}
+                {timeString && (
                   <div style={{
-                    backgroundColor: '#38bdf8',
-                    color: '#000000',
+                    color: hasUnread ? '#38bdf8' : '#555555',
                     fontSize: '10px',
-                    fontWeight: '700',
-                    padding: '2px 8px',
-                    borderRadius: '10px',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    fontWeight: hasUnread ? '500' : '400'
                   }}>
-                    {chat.unreadCount}
+                    {timeString}
                   </div>
                 )}
               </div>
               
               <div style={{ 
-                color: chat.lastMessage ? '#888888' : '#555555', 
+                color: hasUnread ? '#38bdf8' : '#888888',
                 fontSize: '12px', 
                 marginTop: '2px',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
-                textOverflow: 'ellipsis'
+                textOverflow: 'ellipsis',
+                fontWeight: hasUnread ? '500' : '400'
               }}>
                 {chat.lastMessage || t('No messages yet')}
               </div>

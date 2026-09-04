@@ -3,9 +3,10 @@
 import { Fragment, useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { listenChatRoom, sendMessage, markMessagesAsRead } from '@/lib/chat';
-import { Send, ArrowLeft, PackagePlus, Trash2, Plus } from 'lucide-react';
-import { doc, getDoc, collection, addDoc, serverTimestamp, updateDoc, query, where, getDocs, runTransaction } from 'firebase/firestore';
+import { Send, ArrowLeft, PackagePlus, Trash2, Plus, X } from 'lucide-react';
+import { doc, getDoc, collection, addDoc, serverTimestamp, updateDoc, query, where, getDocs, runTransaction, increment, setDoc } from 'firebase/firestore';
 import { getNextReceiptNumber } from '@/lib/ReceiptNumber';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 interface ChatRoomProps {
   chatId: string;
@@ -24,9 +25,34 @@ const getMessageDate = (timestamp: any): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-const formatMessageDate = (timestamp: any): string => {
+const formatMessageDate = (timestamp: any, lang?: string): string => {
   const date = getMessageDate(timestamp);
-  return date ? date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '';
+  if (!date) return '';
+  
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  
+  if (msgDate.getTime() === today.getTime()) {
+    return lang === 'my' ? 'ယနေ့' : 'Today';
+  }
+  
+  if (msgDate.getTime() === yesterday.getTime()) {
+    return lang === 'my' ? 'မနေ့က' : 'Yesterday';
+  }
+  
+  return date.toLocaleDateString(
+    lang === 'my' ? 'my-MM' : 'en-US', 
+    { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    }
+  );
 };
 
 const formatMessageTime = (timestamp: any): string => {
@@ -54,6 +80,8 @@ export default function ChatRoom({
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   
   // ------------- Profile & Role States -------------
   const [receiverId, setReceiverId] = useState<string | null>(null);
@@ -63,6 +91,7 @@ export default function ChatRoom({
   const [currentUserId, setCurrentUserId] = useState(propUserId || '');
   const [isUserSeller, setIsUserSeller] = useState<boolean>(propUserRole === 'seller');
   const [userRole, setUserRole] = useState<'user' | 'seller'>(propUserRole || 'user');
+  const [language, setLanguage] = useState<string>('en');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const user = auth.currentUser;
@@ -171,7 +200,121 @@ export default function ChatRoom({
     } catch (e) { console.error(e); } finally { setSending(false); }
   };
 
-  // 3. Create Order Logic
+  // 3. Image Upload
+  const handleImageUpload = async (file: File) => {
+    if (!activeUserId || !receiverId) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size must be less than 5MB');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const imageUrl = await uploadToCloudinary(file);
+      await sendImageMessage(chatId, activeUserId, receiverId, imageUrl);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to send image. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const sendImageMessage = async (
+  chatId: string,
+  senderId: string,
+  receiverId: string,
+  imageUrl: string
+) => {
+  try {
+    console.log('📤 Sending image message:', imageUrl);
+
+    const chatRef = doc(db, 'chats', chatId);
+    const chatSnap = await getDoc(chatRef);
+
+    if (!chatSnap.exists()) {
+      const chatData = {
+        participants: [senderId, receiverId],
+        createdAt: serverTimestamp(),
+        lastMessage: '📷 Image',
+        lastMessageTime: serverTimestamp(),
+        unreadCount: {},
+      };
+      await setDoc(chatRef, chatData, { merge: true });
+    }
+
+    const messageRef = collection(db, 'chats', chatId, 'messages');
+    const docRef = await addDoc(messageRef, {
+      senderId,
+      receiverId,
+      message: '📷 Image',
+      image: imageUrl,
+      timestamp: serverTimestamp(),
+      read: false,
+      type: 'image',
+    });
+
+    console.log('✅ Image message saved with ID:', docRef.id);
+
+    await updateDoc(chatRef, {
+      lastMessage: '📷 Image',
+      lastMessageTime: serverTimestamp(),
+      [`unreadCount.${receiverId}`]: increment(1),
+    });
+
+      const receiverUserChatRef = doc(db, 'userChats', receiverId, 'chats', chatId);
+      await setDoc(
+        receiverUserChatRef,
+        {
+          lastMessage: '📷 Image',
+          lastMessageTime: serverTimestamp(),
+          unreadCount: increment(1),
+          lastMessageSenderId: senderId,
+        },
+        { merge: true }
+      );
+
+      const senderUserChatRef = doc(db, 'userChats', senderId, 'chats', chatId);
+      await setDoc(
+        senderUserChatRef,
+        {
+          lastMessage: '📷 Image',
+          lastMessageTime: serverTimestamp(),
+          unreadCount: 0,
+          lastMessageSenderId: senderId,
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error('Error sending image message:', error);
+      throw error;
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+    e.target.value = '';
+  };
+
+  // 4. Create Order Logic
   const openOrderModal = async () => {
     if (!user || !receiverId) return;
     setIsOrderModalOpen(true);
@@ -212,7 +355,6 @@ export default function ChatRoom({
     setOrderItems(updated);
   };
 
-  // 💡 ဒီနေရာမှာ အော်ဒါဘောက်ချာ အချက်အလက်များ တိကျစွာ ဝင်ရောက်စေရန် ပြင်ဆင်ထားပါသည်
   const submitOrder = async () => {
     if (!user || !receiverId || orderItems.length === 0) return;
     setLoadingOrder(true);
@@ -262,7 +404,6 @@ export default function ChatRoom({
         createdAt: serverTimestamp() 
       };
       
-      // တိုက်ရိုက် Firestore သို့ အချက်အလက်အပြည့်အစုံဖြင့် ပို့ပေးခြင်း
       await addDoc(collection(db, 'chats', chatId, 'messages'), {
         senderId: user.uid, 
         receiverId, 
@@ -290,7 +431,7 @@ export default function ChatRoom({
     }
   };
 
-  // 4. Confirm / Cancel
+  // 5. Confirm / Cancel
   const handleOrderAction = async () => {
   if (!selectedOrder || !pendingOrderAction || loadingOrder) return;
 
@@ -325,7 +466,6 @@ export default function ChatRoom({
     status: currentPendingAction,
   };
 
-  // Optimistic update
   if (chatId && selectedOrder.id) {
     setMessages(prevMessages => 
       prevMessages.map(msg => 
@@ -344,13 +484,8 @@ export default function ChatRoom({
     const orderRef = doc(db, 'orders', orderId);
 
     if (currentPendingAction === 'CONFIRMED') {
-      // --- 🟢 CONFIRMED Logic ---
-      
-      // ✅ ORDER ကို အရင်ဖတ်ပြီး receiptNumber ကိုသိမ်းပါ
       const orderSnapshot = await getDoc(orderRef);
       const orderDoc = orderSnapshot.exists() ? orderSnapshot.data() : null;
-      
-      // ✅ ရှိပြီးသား receiptNumber ကိုယူပါ
       const existingReceiptNumber = orderDoc?.receiptNumber || '';
       
       const orderBuyerId = orderDoc?.buyerId || selectedOrder.orderData?.buyerId || selectedOrder.buyerId || '';
@@ -373,7 +508,6 @@ export default function ChatRoom({
           return;
         }
 
-        // Quantity များ စုစည်းခြင်း
         const quantities = new Map<string, number>();
         for (const item of order.items || []) {
           if (!item.productId || item.quantity <= 0) {
@@ -382,13 +516,11 @@ export default function ChatRoom({
           quantities.set(item.productId, (quantities.get(item.productId) || 0) + Number(item.quantity));
         }
 
-        // Products snapshot များ ဖတ်ခြင်း
         const productEntries = Array.from(quantities.entries());
         const productSnapshots = await Promise.all(
           productEntries.map(([productId]) => transaction.get(doc(db, 'products', productId)))
         );
 
-        // Product Stock များကို လျှော့ခြင်း
         productSnapshots.forEach((productSnapshot, index) => {
           const [productId, quantity] = productEntries[index];
           if (!productSnapshot.exists()) throw new Error(`Product ${productId} no longer exists.`);
@@ -398,19 +530,17 @@ export default function ChatRoom({
           transaction.update(productSnapshot.ref, { stock: currentStock - quantity });
         });
 
-        // ✅ Order Data ကို Update လုပ်ခြင်း (receiptNumber ကို အသစ်မထုတ်တော့ဘူး)
         transaction.update(orderRef, {
           status: 'CONFIRMED',
           inventoryApplied: true,
           customerPhone: currentPhone,
           deliveryAddress: currentAddress,
           paymentMethod: currentPayment,
-          receiptNumber: existingReceiptNumber, // ✅ ရှိပြီးသား နံပါတ်ကိုပဲ သုံးမယ်
+          receiptNumber: existingReceiptNumber,
           receiptYear: receiptYear,
         });
       });
 
-      // Chat Message ထဲတွင်လည်း အချက်အလက်များ တပါတည်း Update လုပ်ခြင်း
       if (chatId && selectedOrder.id) {
         await updateDoc(doc(db, 'chats', chatId, 'messages', selectedOrder.id), {
           orderData: {
@@ -418,7 +548,7 @@ export default function ChatRoom({
             customerPhone: currentPhone,
             deliveryAddress: currentAddress,
             paymentMethod: currentPayment,
-            receiptNumber: existingReceiptNumber, // ✅ ရှိပြီးသား နံပါတ်
+            receiptNumber: existingReceiptNumber,
             receiptYear: receiptYear,
           },
         });
@@ -429,7 +559,6 @@ export default function ChatRoom({
       setBuyerPaymentMethod('');
       
     } else {
-      // --- 🔴 CANCELLED Logic ---
       await updateDoc(doc(db, 'orders', orderId), {
         status: 'CANCELLED',
       });
@@ -453,14 +582,12 @@ export default function ChatRoom({
   }
 };
 
-  // 5. RENDER
+  // 6. RENDER
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#000' }}>
       {/* HEADER */}
       <div style={{ padding: '12px 16px', backgroundColor: '#121212', borderBottom: '1px solid #262626', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {onBack && <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><ArrowLeft size={20} /></button>}
-          
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>          
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', backgroundColor: '#1a1a1a', border: '2px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {receiverPhoto ? (
               <img src={receiverPhoto} alt={receiverName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -487,16 +614,77 @@ export default function ChatRoom({
 
       {/* MESSAGES LIST */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column' }}>
-        {messages.map((msg, index) => {
-          const isOwn = String(msg.senderId || '').trim() === String(activeUserId).trim();
-          const messageDate = formatMessageDate(msg.timestamp);
-          const previousMessageDate = index > 0 ? formatMessageDate(messages[index - 1].timestamp) : null;
-          const showDateDivider = messageDate && messageDate !== previousMessageDate;
-          const messageTime = formatMessageTime(msg.timestamp);
-          
-          // 💡 ဘောက်ချာပုံစံ ပေါ်လာစေရန် တိကျစွာ စစ်ဆေးခြင်း
-          const isOrder = msg.type === 'order' || (msg.orderData && msg.orderData.items);
+      {messages.map((msg, index) => {
+        const isOwn = String(msg.senderId || '').trim() === String(activeUserId).trim();
+        const messageDate = formatMessageDate(msg.timestamp);
+        const previousMessageDate = index > 0 ? formatMessageDate(messages[index - 1].timestamp) : null;
+        const showDateDivider = messageDate && messageDate !== previousMessageDate;
+        const messageTime = formatMessageTime(msg.timestamp);
+        
+        const isOrder = msg.type === 'order' || (msg.orderData && msg.orderData.items);
+        
+        const isImage = msg.type === 'image' || (msg.image && typeof msg.image === 'string' && msg.image.length > 0);
 
+        // ----- IMAGE MESSAGE -----
+        if (isImage) {
+          return (
+            <Fragment key={msg.id}>
+              {showDateDivider && (
+                <div style={{ alignSelf: 'center', color: '#a1a1aa', fontSize: '11px', margin: '8px 0 12px', textAlign: 'center' }}>
+                  {messageDate}
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', marginBottom: '12px', width: '100%' }}>
+                <div
+                  style={{
+                    backgroundColor: isOwn ? '#38bdf8' : '#1a1a1a',
+                    padding: '8px',
+                    borderRadius: isOwn ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                    display: 'inline-block',
+                    maxWidth: '75%',
+                  }}
+                >
+                  {msg.image ? (
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🖼️ Image clicked:', msg.image);
+                        setFullscreenImage(msg.image);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <img
+                        src={msg.image}
+                        alt="Chat image"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '300px',
+                          borderRadius: '8px',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                        onError={(e) => {
+                          console.error('Image load error:', msg.image);
+                          (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ color: '#888', padding: '8px' }}>Image not available</div>
+                  )}
+                  {messageTime && (
+                    <div style={{ color: isOwn ? '#00000080' : '#71717a', fontSize: '10px', marginTop: '4px', textAlign: isOwn ? 'right' : 'left' }}>
+                      {messageTime}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Fragment>
+          );
+        }
+
+          // ----- ORDER MESSAGE -----
           if (isOrder) {
             const order = msg.orderData || {};
             const isBuyer = activeUserId === order.buyerId;
@@ -634,6 +822,7 @@ export default function ChatRoom({
             );
           }
 
+          // ----- TEXT MESSAGE -----
           return (
             <Fragment key={msg.id}>
               {showDateDivider && <div style={{ alignSelf: 'center', color: '#a1a1aa', fontSize: '11px', margin: '8px 0 12px', textAlign: 'center' }}>{messageDate}</div>}
@@ -660,12 +849,83 @@ export default function ChatRoom({
       </div>
 
       {/* INPUT */}
-      <div style={{ padding: '12px 16px', backgroundColor: '#121212', borderTop: '1px solid #262626', display: 'flex', gap: '8px' }}>
-        <input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="Type a message..." style={{ flex: 1, padding: '10px 14px', borderRadius: '20px', backgroundColor: '#1a1a1a', border: '1px solid #262626', color: '#fff', outline: 'none' }} />
-        <button onClick={handleSend} disabled={!newMessage.trim() || sending} style={{ padding: '10px', borderRadius: '50%', backgroundColor: '#38bdf8', border: 'none', color: '#000', cursor: 'pointer', opacity: newMessage.trim() && !sending ? 1 : 0.5 }}>
+      <div style={{ padding: '12px 16px', backgroundColor: '#121212', borderTop: '1px solid #262626', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        {/* Plus Button - Image Upload */}
+        <label
+          style={{
+            padding: '10px',
+            borderRadius: '50%',
+            backgroundColor: '#1a1a1a',
+            border: '1px solid #262626',
+            color: '#888888',
+            cursor: isUploading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            opacity: isUploading ? 0.5 : 1,
+          }}
+          onMouseEnter={(e) => {
+            if (!isUploading) {
+              e.currentTarget.style.backgroundColor = '#262626';
+              e.currentTarget.style.borderColor = '#38bdf8';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#1a1a1a';
+            e.currentTarget.style.borderColor = '#262626';
+          }}
+        >
+          <Plus size={18} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+            disabled={isUploading}
+          />
+        </label>
+
+        <input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          placeholder="Type a message..."
+          style={{
+            flex: 1,
+            padding: '10px 14px',
+            borderRadius: '20px',
+            backgroundColor: '#1a1a1a',
+            border: '1px solid #262626',
+            color: '#fff',
+            outline: 'none',
+          }}
+          disabled={isUploading}
+        />
+        
+        <button
+          onClick={handleSend}
+          disabled={!newMessage.trim() || sending || isUploading}
+          style={{
+            padding: '10px',
+            borderRadius: '50%',
+            backgroundColor: '#38bdf8',
+            border: 'none',
+            color: '#000',
+            cursor: 'pointer',
+            opacity: newMessage.trim() && !sending && !isUploading ? 1 : 0.5,
+          }}
+        >
           <Send size={18} />
         </button>
       </div>
+
+      {/* Uploading Indicator */}
+      {isUploading && (
+        <div style={{ padding: '8px 16px', backgroundColor: '#1a1a2e', borderTop: '1px solid #262626', color: '#38bdf8', fontSize: '12px', textAlign: 'center' }}>
+          Uploading image... Please wait.
+        </div>
+      )}
 
       {/* CREATE ORDER MODAL (SELLER) */}
       {isOrderModalOpen && (
@@ -728,7 +988,6 @@ export default function ChatRoom({
         </div>
       )}
 
-
       {isReceiptFullscreen && receiptOrder && (
         <div
           role="dialog"
@@ -774,6 +1033,73 @@ export default function ChatRoom({
             </div>
             <div style={{ textAlign: 'center', color: '#d4d4d8', fontStyle: 'italic' }}>Thank you for your purchase!</div>
           </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN IMAGE MODAL */}
+      {fullscreenImage && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'fadeIn 0.3s ease',
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setFullscreenImage(null);
+          }}
+        >
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setFullscreenImage(null);
+            }}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              color: '#fff',
+              fontSize: '24px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s',
+              zIndex: 10000,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
+            }}
+          >
+            <X size={24} />
+          </button>
+
+          <img
+            src={fullscreenImage}
+            alt="Fullscreen"
+            style={{
+              maxWidth: '95%',
+              maxHeight: '95%',
+              objectFit: 'contain',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

@@ -48,6 +48,15 @@ export default function MessagesPage() {
     return () => unsubscribe();
   }, [router]);
 
+  // ✅ နောက်ပြန်နှိပ်ရင် ဘယ်ကိုသွားမလဲ
+  const handleBack = () => {
+    if (selectedChatId) {
+      setSelectedChatId(null); // Chat Room ကနေ Chat List ကိုပြန်
+    } else {
+      router.push('/'); // Chat List ကနေ Home ကိုပြန်
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ 
@@ -66,35 +75,41 @@ export default function MessagesPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '16px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto', height: 'calc(100vh - 32px)' }}>
-        {/* Header */}
+        {/* Header - Back Button တစ်ခုပဲရှိတယ် */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
           marginBottom: '16px'
         }}>
-          <Link
-            href="/"
+          {/* ✅ မြှားတစ်ခုပဲ - နှိပ်ရင် ဘယ်ကိုသွားမလဲဆိုတာ handleBack က ဆုံးဖြတ်ပေးမယ် */}
+          <button
+            onClick={handleBack}
             style={{ 
               color: '#38bdf8', 
-              textDecoration: 'none', 
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
               display: 'inline-flex', 
               alignItems: 'center', 
-              gap: '6px' 
+              gap: '6px',
+              padding: '4px 0',
+              fontSize: '14px'
             }}
           >
-            <ArrowLeft size={18} />
-            <span style={{ fontSize: '14px' }}>
-              {language === 'my' ? 'နောက်သို့' : 'Back'}
-            </span>
-          </Link>
+            <ArrowLeft size={18} />            
+          </button>
+
           <h1 style={{ 
             color: '#ffffff', 
             fontSize: '18px', 
             fontWeight: '700', 
             margin: 0 
           }}>
-            {language === 'my' ? 'ဝင်စာများ' : 'Messages'}
+            {selectedChatId 
+              ? (language === 'my' ? 'စကားပြောခန်း' : 'Chat Room')
+              : (language === 'my' ? 'ဝင်စာများ' : 'Messages')
+            }
           </h1>
         </div>
 

@@ -24,6 +24,7 @@ export interface ChatMessage {
   senderId: string;
   receiverId: string;
   message: string;
+  image?: string;
   timestamp: any;
   read: boolean;
   type?: 'text' | 'image' | 'order';
@@ -253,13 +254,35 @@ export const sendMessage = async (
 
 export const markMessagesAsRead = async (chatId: string, userId: string) => {
   try {
-    const q = query(collection(db, 'chats', chatId, 'messages'), where('receiverId', '==', userId), where('read', '==', false));
+    // ၁။ မဖတ်ရသေးတဲ့ messages တွေကို ရှာမယ်
+    const q = query(
+      collection(db, 'chats', chatId, 'messages'),
+      where('receiverId', '==', userId),
+      where('read', '==', false)
+    );
     const snapshot = await getDocs(q);
+    
+    // ၂။ Batch update လုပ်မယ်
     const batch = writeBatch(db);
-    snapshot.docs.forEach((doc) => { batch.update(doc.ref, { read: true }); });
+    snapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, { read: true });
+    });
     await batch.commit();
-    await updateDoc(doc(db, 'chats', chatId), { [`unreadCount.${userId}`]: 0 });
-    await setDoc(doc(db, 'userChats', userId, 'chats', chatId), { unreadCount: 0 }, { merge: true });
+    
+    console.log(`✅ Marked ${snapshot.docs.length} messages as read in chat ${chatId}`);
+    
+    // ၃။ Chat document ထဲက unreadCount ကို 0 ပြန်သတ်မယ်
+    await updateDoc(doc(db, 'chats', chatId), {
+      [`unreadCount.${userId}`]: 0
+    });
+    
+    // ၄။ userChats ထဲက unreadCount ကို 0 ပြန်သတ်မယ်
+    await setDoc(
+      doc(db, 'userChats', userId, 'chats', chatId),
+      { unreadCount: 0 },
+      { merge: true }
+    );
+    
   } catch (error) {
     console.error('Error marking messages as read:', error);
   }
@@ -345,6 +368,7 @@ export const listenChatRoom = (chatId: string, callback: (messages: ChatMessage[
         senderId: data.senderId || '',
         receiverId: data.receiverId || '',
         message: data.message || '',
+        image: data.image || '', // ✅ ဒီမှာ image field ထည့်ပါ
         timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
         read: data.read || false,
         type: data.type || 'text',
@@ -371,6 +395,7 @@ export const listenChatRoomWithUnread = (chatId: string, userId: string, callbac
         senderId: data.senderId || '',
         receiverId: data.receiverId || '',
         message: data.message || '',
+        image: data.image || '', // ✅ ဒီမှာထည့်ပါ
         timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
         read: data.read || false,
         type: data.type || 'text',
