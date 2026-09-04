@@ -3,7 +3,7 @@
 import { Fragment, useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { listenChatRoom, sendMessage, markMessagesAsRead } from '@/lib/chat';
-import { Send, ArrowLeft, PackagePlus, Trash2, Plus, X } from 'lucide-react';
+import { Send, ArrowLeft, PackagePlus, Trash2, Plus, Image as ImageIcon, Camera, X } from 'lucide-react';
 import { doc, getDoc, collection, addDoc, serverTimestamp, updateDoc, query, where, getDocs, runTransaction, increment, setDoc } from 'firebase/firestore';
 import { getNextReceiptNumber } from '@/lib/ReceiptNumber';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -66,6 +66,62 @@ const getPreferredProfileName = (data: Record<string, any> = {}) => {
   const shopName = typeof data.shopName === 'string' ? data.shopName.trim() : '';
 
   return displayName || username || shopName || 'User';
+};
+
+// ✅ compressImage - Component အပြင်မှာထားလို့ရတယ် (state မလိုလို့)
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        const compressWithQuality = (quality: number) => {
+          const MAX_DIMENSION = 1200;
+          let w = width;
+          let h = height;
+          
+          if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
+            const ratio = Math.min(MAX_DIMENSION / w, MAX_DIMENSION / h);
+            w = w * ratio;
+            h = h * ratio;
+          }
+          
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, w, h);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), { 
+                type: 'image/jpeg' 
+              });
+              
+              console.log(`📦 Quality ${Math.round(quality * 100)}%: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+              
+              if (blob.size > 5 * 1024 * 1024 && quality > 0.2) {
+                compressWithQuality(quality - 0.1);
+              } else {
+                resolve(compressedFile);
+              }
+            } else {
+              reject(new Error('Failed to compress image'));
+            }
+          }, 'image/jpeg', quality);
+        };
+        
+        compressWithQuality(0.8);
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
 };
 
 export default function ChatRoom({
@@ -200,16 +256,50 @@ export default function ChatRoom({
     } catch (e) { console.error(e); } finally { setSending(false); }
   };
 
-  // 3. Image Upload
+  // 3. Image Upload - ✅ Component ထဲမှာ ထားပါ
   const handleImageUpload = async (file: File) => {
     if (!activeUserId || !receiverId) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+    // ✅ 5MB အောက်ဆိုရင် မူလပုံအတိုင်း
+    if (file.size <= 5 * 1024 * 1024) {
+      console.log('✅ File size is within 5MB limit, using original file');
+      
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      setIsUploading(true);
+      try {
+        const imageUrl = await uploadToCloudinary(file);
+        await sendImageMessage(chatId, activeUserId, receiverId, imageUrl);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        alert('Failed to send image. Please try again.');
+      } finally {
+        setIsUploading(false);
+      }
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
+    // ✅ 5MB ကျော်ရင် ချုံ့မယ်
+    console.log('🔄 File size exceeds 5MB, compressing...');
+    
+    let processedFile = file;
+    try {
+      processedFile = await compressImage(file);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      alert('Failed to compress image. Please try another image.');
+      return;
+    }
+
+    if (processedFile.size > 5 * 1024 * 1024) {
+      alert('Image could not be compressed to under 5MB. Please choose a smaller image.');
+      return;
+    }
+
+    if (!processedFile.type.startsWith('image/')) {
       alert('Please select an image file');
       return;
     }
@@ -217,7 +307,7 @@ export default function ChatRoom({
     setIsUploading(true);
 
     try {
-      const imageUrl = await uploadToCloudinary(file);
+      const imageUrl = await uploadToCloudinary(processedFile);
       await sendImageMessage(chatId, activeUserId, receiverId, imageUrl);
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -228,46 +318,46 @@ export default function ChatRoom({
   };
 
   const sendImageMessage = async (
-  chatId: string,
-  senderId: string,
-  receiverId: string,
-  imageUrl: string
-) => {
-  try {
-    console.log('📤 Sending image message:', imageUrl);
+    chatId: string,
+    senderId: string,
+    receiverId: string,
+    imageUrl: string
+  ) => {
+    try {
+      console.log('📤 Sending image message:', imageUrl);
 
-    const chatRef = doc(db, 'chats', chatId);
-    const chatSnap = await getDoc(chatRef);
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
 
-    if (!chatSnap.exists()) {
-      const chatData = {
-        participants: [senderId, receiverId],
-        createdAt: serverTimestamp(),
+      if (!chatSnap.exists()) {
+        const chatData = {
+          participants: [senderId, receiverId],
+          createdAt: serverTimestamp(),
+          lastMessage: '📷 Image',
+          lastMessageTime: serverTimestamp(),
+          unreadCount: {},
+        };
+        await setDoc(chatRef, chatData, { merge: true });
+      }
+
+      const messageRef = collection(db, 'chats', chatId, 'messages');
+      const docRef = await addDoc(messageRef, {
+        senderId,
+        receiverId,
+        message: '📷 Image',
+        image: imageUrl,
+        timestamp: serverTimestamp(),
+        read: false,
+        type: 'image',
+      });
+
+      console.log('✅ Image message saved with ID:', docRef.id);
+
+      await updateDoc(chatRef, {
         lastMessage: '📷 Image',
         lastMessageTime: serverTimestamp(),
-        unreadCount: {},
-      };
-      await setDoc(chatRef, chatData, { merge: true });
-    }
-
-    const messageRef = collection(db, 'chats', chatId, 'messages');
-    const docRef = await addDoc(messageRef, {
-      senderId,
-      receiverId,
-      message: '📷 Image',
-      image: imageUrl,
-      timestamp: serverTimestamp(),
-      read: false,
-      type: 'image',
-    });
-
-    console.log('✅ Image message saved with ID:', docRef.id);
-
-    await updateDoc(chatRef, {
-      lastMessage: '📷 Image',
-      lastMessageTime: serverTimestamp(),
-      [`unreadCount.${receiverId}`]: increment(1),
-    });
+        [`unreadCount.${receiverId}`]: increment(1),
+      });
 
       const receiverUserChatRef = doc(db, 'userChats', receiverId, 'chats', chatId);
       await setDoc(
@@ -301,6 +391,7 @@ export default function ChatRoom({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      console.log('📸 File selected:', file.name, file.type);
       handleImageUpload(file);
     }
     e.target.value = '';
@@ -309,6 +400,7 @@ export default function ChatRoom({
   const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      console.log('📸 Camera captured:', file.name, file.type);
       handleImageUpload(file);
     }
     e.target.value = '';
@@ -850,7 +942,8 @@ export default function ChatRoom({
 
       {/* INPUT */}
       <div style={{ padding: '12px 16px', backgroundColor: '#121212', borderTop: '1px solid #262626', display: 'flex', gap: '8px', alignItems: 'center' }}>
-        {/* Plus Button - Image Upload */}
+        
+        {/* ✅ Plus Button - Image Upload (Gallery + Camera) */}
         <label
           style={{
             padding: '10px',
