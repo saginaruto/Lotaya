@@ -1,14 +1,15 @@
 // components/ProductDetailModal.tsx
 'use client';
 
-import { X, MapPin, MessageCircle, Phone } from "lucide-react";
-import { useState, useEffect } from 'react';
+import { X, MapPin, MessageCircle, Phone, Heart } from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/components/LanguageProvider';
 import { getChatRoom, createChatId } from '@/lib/chat';
+import { useWishlist } from '@/context/WishlistContext';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -32,25 +33,12 @@ export default function ProductDetailModal({
   const [sellerPhone, setSellerPhone] = useState<string>('');
   const { language } = useLanguage();
 
-  // ✅ ဆိုင်ရှင်ရဲ့ ဖုန်းနံပါတ်ကို ယူမယ်
-  useEffect(() => {
-    const fetchSellerPhone = async () => {
-      if (product?.sellerId) {
-        try {
-          const sellerRef = doc(db, 'users', product.sellerId);
-          const sellerSnap = await getDoc(sellerRef);
-          if (sellerSnap.exists()) {
-            const sellerData = sellerSnap.data();
-            setSellerPhone(sellerData.phone || sellerData.shopPhone || '');
-          }
-        } catch (error) {
-          console.error('Error fetching seller phone:', error);
-        }
-      }
-    };
-    fetchSellerPhone();
-  }, [product?.sellerId]);
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const isWishlisted = isInWishlist(product?.id);
 
+  const lastTapRef = useRef<number>(0);
+
+  // ✅ User Role ကို စစ်မယ်
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -71,18 +59,61 @@ export default function ProductDetailModal({
     return () => unsubscribe();
   }, []);
 
-  const handleChatNow = async () => {
-    console.log("🟢 Chat button clicked!");
-    console.log("🔍 currentUser:", currentUser);
-    console.log("🔍 product.sellerId:", product?.sellerId);
+  const handleDoubleTap = async (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    
+    // ✅ ဝယ်သူမှသာ Wishlist ထည့်လို့ရမယ်
+    if (userRole !== 'user') return;
+    
+    const now = Date.now();
+    const lastTap = lastTapRef.current;
+    const timeSinceLastTap = now - lastTap;
+    
+    if (timeSinceLastTap < 300) {
+      if (!product?.id) return;
+      
+      if (isInWishlist(product.id)) {
+        await removeFromWishlist(product.id);
+      } else {
+        await addToWishlist(product.id);
+      }
+      lastTapRef.current = 0;
+    } else {
+      lastTapRef.current = now;
+    }
+  };
 
+  const handleOutsideClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  useEffect(() => {
+    const fetchSellerPhone = async () => {
+      if (product?.sellerId) {
+        try {
+          const sellerRef = doc(db, 'users', product.sellerId);
+          const sellerSnap = await getDoc(sellerRef);
+          if (sellerSnap.exists()) {
+            const sellerData = sellerSnap.data();
+            setSellerPhone(sellerData.phone || sellerData.shopPhone || '');
+          }
+        } catch (error) {
+          console.error('Error fetching seller phone:', error);
+        }
+      }
+    };
+    fetchSellerPhone();
+  }, [product?.sellerId]);
+
+  const handleChatNow = async () => {
     if (!currentUser) {
       router.push('/login');
       return;
     }
 
     if (!product?.sellerId) {
-      console.error('❌ Product sellerId is missing:', product);
       alert('Product seller information is missing. Please try again.');
       return;
     }
@@ -100,8 +131,6 @@ export default function ProductDetailModal({
       );
       
       const targetChatId = chatId || createChatId(currentUser.uid, product.sellerId);
-      
-      console.log("✅ Chat room ID:", targetChatId);
       onClose();
       
       setTimeout(() => {
@@ -116,6 +145,7 @@ export default function ProductDetailModal({
   if (!isOpen || !product) return null;
 
   const isOwner = currentUser?.uid === product.sellerId;
+  const isBuyer = userRole === 'user';
 
   return (
     <div
@@ -128,7 +158,7 @@ export default function ProductDetailModal({
         flexDirection: "column",
         animation: "fadeIn 0.3s ease"
       }}
-      onClick={onClose}
+      onClick={handleOutsideClick}
     >
       {/* Close Button */}
       <button
@@ -153,7 +183,39 @@ export default function ProductDetailModal({
         <X size={24} />
       </button>
 
-      {/* ====== Product Image with OVERLAY + MARQUEE ====== */}
+      {/* ✅ Wishlist Status - ဝယ်သူမှာပဲပြမယ် */}
+      {isBuyer && (
+        <div
+          style={{
+            position: "absolute",
+            top: "66px",
+            right: "16px",
+            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(4px)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            pointerEvents: "none"
+          }}
+        >
+          <Heart
+            size={22}
+            style={{
+              fill: isWishlisted ? '#ef4444' : 'none',
+              stroke: isWishlisted ? '#ef4444' : '#ffffff',
+              strokeWidth: isWishlisted ? 0 : 2,
+              transition: 'all 0.3s ease'
+            }}
+          />
+        </div>
+      )}
+
+      {/* Product Image */}
       <div
         style={{
           width: "100%",
@@ -161,9 +223,12 @@ export default function ProductDetailModal({
           backgroundColor: "var(--card-background)",
           position: "relative",
           flexShrink: 0,
-          overflow: "hidden"
+          overflow: "hidden",
+          cursor: isBuyer ? 'pointer' : 'default'
         }}
         onClick={(e) => e.stopPropagation()}
+        onDoubleClick={handleDoubleTap}
+        onTouchEnd={handleDoubleTap}
       >
         <img
           src={product.image}
@@ -176,7 +241,7 @@ export default function ProductDetailModal({
           }}
         />
 
-        {/* ====== Shop Logo - အပေါ်ဆုံးထိ ကပ် ====== */}
+        {/* Shop Logo */}
         <div
           style={{
             position: "absolute",
@@ -206,7 +271,7 @@ export default function ProductDetailModal({
           />
         </div>
 
-        {/* ====== OVERLAY LOCATION + MARQUEE ====== */}
+        {/* Overlay + Marquee */}
         <div
           style={{
             position: "absolute",
@@ -246,7 +311,6 @@ export default function ProductDetailModal({
                   paddingLeft: "100%"
                 }}
               >
-                {/* Location - အပြာရောင် */}
                 <span
                   style={{
                     fontSize: "13px",
@@ -257,7 +321,6 @@ export default function ProductDetailModal({
                   {product?.location || "Location not specified"}
                 </span>
                 
-                {/* Phone Icon + Number - အဝါရောင် */}
                 {sellerPhone && (
                   <span
                     style={{
@@ -280,7 +343,7 @@ export default function ProductDetailModal({
         </div>
       </div>
 
-      {/* ====== Bottom Info ====== */}
+      {/* Bottom Info */}
       <div
         style={{
           padding: "12px 16px 12px 16px",
@@ -291,7 +354,6 @@ export default function ProductDetailModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Brand, Name, Price - Chat Button နဲ့ တစ်တန်းတည်း */}
         <div>
           {product.discount && product.discount !== 'New' && (
             <span
@@ -310,7 +372,6 @@ export default function ProductDetailModal({
             </span>
           )}
           
-          {/* Product Name နဲ့ Chat Button တစ်တန်းတည်း */}
           <div
             style={{
               display: "flex",
@@ -343,7 +404,6 @@ export default function ProductDetailModal({
               </h3>
             </div>
 
-            {/* Chat Button */}
             {!loading && allowChat && !isOwner && product.sellerId && (
               <button
                 onClick={(e) => {
@@ -372,7 +432,6 @@ export default function ProductDetailModal({
             )}
           </div>
 
-          {/* Price */}
           <div
             style={{
               fontSize: "18px",
@@ -385,7 +444,6 @@ export default function ProductDetailModal({
           </div>
         </div>
 
-        {/* Product Details Box */}
         {product?.description && (
           <div
             style={{

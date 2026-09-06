@@ -7,6 +7,10 @@ import { translateCity } from '@/data/cities';
 import { useWishlist } from '@/context/WishlistContext';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface HeaderProps {
   setIsSidebarOpen: (value: boolean) => void;
@@ -34,19 +38,33 @@ export default function Header({
   setSelectedCategory,
 }: HeaderProps) {
   const { language, t } = useLanguage();
-  const [wishlistCount, setWishlistCount] = useState(0);
-  const [isWishlistReady, setIsWishlistReady] = useState(false);
+  const { wishlist } = useWishlist();
+  const [userRole, setUserRole] = useState<'user' | 'seller' | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ Wishlist context ကို safe ဖြစ်အောင်သုံးပါ
+  // ✅ User Role ကို စစ်မယ်
   useEffect(() => {
-    try {
-      const context = useWishlist();
-      setWishlistCount(context.wishlist.length);
-      setIsWishlistReady(true);
-    } catch (error) {
-      console.debug('Wishlist context not available yet');
-      setIsWishlistReady(false);
-    }
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const role = userSnap.data().role || 'user';
+            setUserRole(role);
+          } else {
+            setUserRole('user');
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+          setUserRole('user');
+        }
+      } else {
+        setUserRole(null);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   const getLocationDisplay = () => {
@@ -55,6 +73,9 @@ export default function Header({
     }
     return translateCity(selectedLocation, language);
   };
+
+  // ✅ Wishlist ကို ဝယ်သူမှာပဲ ပြမယ်
+  const showWishlist = userRole === 'user' && !loading;
 
   return (
     <header 
@@ -116,55 +137,57 @@ export default function Header({
 
           {/* Right Side - Wishlist + Location */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            {/* Wishlist Button */}
-            <Link
-              href="/wishlist"
-              style={{
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "transparent",
-                border: "none",
-                color: "var(--foreground)",
-                cursor: "pointer",
-                padding: "4px",
-                height: "36px",
-                width: "36px",
-                borderRadius: "50%",
-                textDecoration: "none"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--hover-background)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              <Heart size={20} />
-              {isWishlistReady && wishlistCount > 0 && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: "-2px",
-                    right: "-2px",
-                    backgroundColor: "#ef4444",
-                    color: "#ffffff",
-                    fontSize: "10px",
-                    fontWeight: "600",
-                    borderRadius: "50%",
-                    width: "18px",
-                    height: "18px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "2px solid var(--background)"
-                  }}
-                >
-                  {wishlistCount}
-                </span>
-              )}
-            </Link>
+            {/* ✅ Wishlist Button - ဝယ်သူမှာပဲပြမယ် */}
+            {showWishlist && (
+              <Link
+                href="/wishlist"
+                style={{
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "transparent",
+                  border: "none",
+                  color: "var(--foreground)",
+                  cursor: "pointer",
+                  padding: "4px",
+                  height: "36px",
+                  width: "36px",
+                  borderRadius: "50%",
+                  textDecoration: "none"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--hover-background)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                <Heart size={20} />
+                {wishlist.length > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "-2px",
+                      right: "-2px",
+                      backgroundColor: "#ef4444",
+                      color: "#ffffff",
+                      fontSize: "10px",
+                      fontWeight: "600",
+                      borderRadius: "50%",
+                      width: "18px",
+                      height: "18px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "2px solid var(--background)"
+                    }}
+                  >
+                    {wishlist.length}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {/* Location Button */}
             <button
