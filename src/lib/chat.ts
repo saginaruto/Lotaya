@@ -146,35 +146,33 @@ const createUserChatIndexes = async (chatId: string, userId1: string, userId2: s
   ]);
 };
 
+// ===== ✅ ပြင်ဆင်ပြီးသား sendPushNotification (Server-Side API ကိုခေါ်မယ်) =====
 const sendPushNotification = async (userId: string, title: string, body: string, chatId: string) => {
   try {
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
+    // ✅ API Route ကိုခေါ်ပါ (Server-Side)
+    const response = await fetch('/api/send-notification', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        title,
+        body,
+        chatId,
+      }),
+    });
+
+    const data = await response.json();
     
-    if (userSnap.exists()) {
-      const userData = userSnap.data();
-      const fcmToken = userData.fcmToken;
-      
-      if (fcmToken) {
-        const serverKey = process.env.FCM_SERVER_KEY || '';
-        await fetch('https://fcm.googleapis.com/v1/projects/d-saing-chat/messages:send', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${serverKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: {
-              token: fcmToken,
-              notification: { title, body },
-              data: { title, body, sound: '/sounds/notification.mp3', url: '/chat', chatId },
-            },
-          }),
-        });
-      }
+    if (!response.ok) {
+      console.error('❌ Notification API error:', data.error);
+      return;
     }
+
+    console.log('✅ Notification sent:', data.message);
   } catch (error) {
-    console.error('Error sending push notification:', error);
+    console.error('❌ Error sending push notification:', error);
   }
 };
 
@@ -368,7 +366,7 @@ export const listenChatRoom = (chatId: string, callback: (messages: ChatMessage[
         senderId: data.senderId || '',
         receiverId: data.receiverId || '',
         message: data.message || '',
-        image: data.image || '', // ✅ ဒီမှာ image field ထည့်ပါ
+        image: data.image || '',
         timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
         read: data.read || false,
         type: data.type || 'text',
@@ -395,7 +393,7 @@ export const listenChatRoomWithUnread = (chatId: string, userId: string, callbac
         senderId: data.senderId || '',
         receiverId: data.receiverId || '',
         message: data.message || '',
-        image: data.image || '', // ✅ ဒီမှာထည့်ပါ
+        image: data.image || '',
         timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date().toISOString(),
         read: data.read || false,
         type: data.type || 'text',

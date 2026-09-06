@@ -21,20 +21,22 @@ export default function RootLayout({
         try {
           setLanguage('en');
 
-          // ✅ FCM Token ရယူရန်
           try {
-            // ✅ Token ရယူပြီး Foreground Listener စတင်
             await requestFCMToken(user.uid);
             
-            // ✅ Foreground Message Listener
             listenForMessages((payload) => {
               console.log('📨 Foreground message:', payload);
               
-              // မက်ဆေ့ခ်ျထဲက Title နဲ့ Body ကို ယူပြီး Screen ပေါ်မှာ Alert ပြမယ်
               const title = payload.notification?.title || payload.data?.title || 'မက်ဆေ့ခ်ျအသစ်';
               const body = payload.notification?.body || payload.data?.body || 'မှာယူမှုအသစ် ရောက်ရှိပါပြီ';
               
-              alert(`${title}: ${body}`);
+              // ✅ new Notification ကို ထားပါ
+              if (payload.notification) {
+                new Notification(payload.notification.title || 'New Message', {
+                  body: payload.notification.body || '',
+                  icon: '/logo.png'
+                });
+              }
             });
             
           } catch (error) {
@@ -49,7 +51,7 @@ export default function RootLayout({
     return () => unsubscribe();
   }, []);
 
-  // ✅ Service Workers - PWA နဲ့ FCM နှစ်ခုလုံးအတွက်
+  // ✅ Service Workers
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -59,7 +61,6 @@ export default function RootLayout({
     }
   }, []);
 
-  // ✅ Head elements
   const headElements = (
     <>
       <link rel="manifest" href="/manifest.json" />
@@ -70,7 +71,6 @@ export default function RootLayout({
       <meta name="mobile-web-app-capable" content="yes" />
       <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       <link rel="icon" href="/icons/icon-192x192.png" />
-      {/* ✅ FCM Service Worker အတွက် */}
       <link rel="service-worker" href="/firebase-messaging-sw.js" />
     </>
   );
