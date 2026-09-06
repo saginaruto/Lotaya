@@ -1,37 +1,123 @@
 // public/firebase-messaging-sw.js
 
-// ၁။ Firebase SDKs ကို import လုပ်
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+// ၁။ Firebase SDKs ကို import လုပ်ခြင်း
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
-// ၂။ Firebase Config (ခင်ဗျားရဲ့ config ထည့်ပါ)
+// ၂။ Firebase Config (သင့်ရဲ့ config အချက်အလက်များကို ဒီမှာ အပြည့်အစုံ ထည့်ပါ)
 const firebaseConfig = {
   apiKey: "AIzaSyDZp2yLittnCqMuynDJE-YZcgWdAxmymwo",
-  authDomain: "d-saing-chat.firebaseapp.com",  
+  authDomain: "d-saing-chat.firebaseapp.com",
+  databaseURL: "https://d-saing-chat-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "d-saing-chat",
   storageBucket: "d-saing-chat.firebasestorage.app",
   messagingSenderId: "533173820233",
-  appId: "1:533173820233:web:93361cab4873f791991898",  
+  appId: "1:533173820233:web:93361cab4873f791991898",
+  measurementId: "G-W63WPRF433"
 };
 
-// ၃။ Firebase ကို Initialize လုပ်
-firebase.initializeApp(firebaseConfig);
+// ၃။ Firebase ကို Initialize လုပ်ခြင်း (Service Worker အတွက် အဓိက)
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+} else {
+  firebase.app();
+}
 
-// ၄။ Messaging ကို ရယူပြီး Background Message Handler သတ်မှတ်
+// ၄။ Messaging ကို ရယူခြင်း
 const messaging = firebase.messaging();
 
-// ၅။ Background မှာ Notification လက်ခံရန်
+// ===== PWA Cache =====
+const CACHE_NAME = "d-saing-v1";
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log("📦 Caching assets...");
+      return cache.addAll([
+        "/",
+        "/manifest.json",
+        "/icons/icon-192x192.png",
+        "/icons/icon-512x512.png"
+      ]);
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      );
+    })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.method === 'POST') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const clonedResponse = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, clonedResponse);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
+  );
+});
+
+// ===== Push Notifications (Firebase Background Message) =====
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  console.log('[firebase-messaging-sw.js] Received background message:', payload);
   
-  const notificationTitle = payload.notification?.title || 'New Notification';
+  const notificationTitle = payload.data?.title || payload.notification?.title || 'D Saing';
+  const notificationBody = payload.data?.body || payload.notification?.body || 'New message!';
+  const notificationUrl = payload.data?.url || '/chat';
+  
   const notificationOptions = {
-    body: payload.notification?.body || 'You have a new message',
-    icon: '/logo.png',
+    body: notificationBody,
+    icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-192x192.png',
     vibrate: [200, 100, 200],
-    data: payload.data
+    requireInteraction: true,
+    data: {
+      url: notificationUrl,
+    },
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// ===== Notification Click =====
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  
+  const url = event.notification.data?.url || "/chat";
+  
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(url) && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
+    })
+  );
 });

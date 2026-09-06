@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { auth, requestFCMToken } from '@/lib/firebase';
+import { auth, requestFCMToken, listenForMessages } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './globals.css';
 import LanguageProvider, { Language } from '@/components/LanguageProvider';
@@ -21,17 +21,22 @@ export default function RootLayout({
         try {
           setLanguage('en');
 
-          // ✅ FCM Token ရယူရန် - Service Worker ကို ဦးစွာ Register လုပ်
+          // ✅ FCM Token ရယူရန်
           try {
-            // Service Worker ကို အရင်ဆုံး Register လုပ်ပါ
-            if ('serviceWorker' in navigator) {
-              // ✅ firebase-messaging-sw.js ကို ဦးစွာ Register လုပ်
-              await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-              console.log('✅ Firebase Messaging SW registered');
-            }
-            
-            // ပြီးမှ FCM Token ရယူပါ
+            // ✅ Token ရယူပြီး Foreground Listener စတင်
             await requestFCMToken(user.uid);
+            
+            // ✅ Foreground Message Listener
+            listenForMessages((payload) => {
+              console.log('📨 Foreground message:', payload);
+              
+              // မက်ဆေ့ခ်ျထဲက Title နဲ့ Body ကို ယူပြီး Screen ပေါ်မှာ Alert ပြမယ်
+              const title = payload.notification?.title || payload.data?.title || 'မက်ဆေ့ခ်ျအသစ်';
+              const body = payload.notification?.body || payload.data?.body || 'မှာယူမှုအသစ် ရောက်ရှိပါပြီ';
+              
+              alert(`${title}: ${body}`);
+            });
+            
           } catch (error) {
             console.warn('FCM token request failed:', error);
           }
@@ -44,17 +49,17 @@ export default function RootLayout({
     return () => unsubscribe();
   }, []);
 
-  // ✅ Service Worker (PWA) အတွက်
+  // ✅ Service Workers - PWA နဲ့ FCM နှစ်ခုလုံးအတွက်
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('/sw.js')
-        .then((reg) => console.log('✅ PWA Service Worker registered:', reg))
-        .catch((err) => console.log('❌ PWA Service Worker registration failed:', err));
+        .register('/firebase-messaging-sw.js')
+        .then((reg) => console.log('✅ FCM/PWA Service Worker registered:', reg))
+        .catch((err) => console.log('❌ Service Worker registration failed:', err));
     }
   }, []);
 
-  // ✅ Head elements ကို တစ်နေရာတည်းမှာ စုပါ
+  // ✅ Head elements
   const headElements = (
     <>
       <link rel="manifest" href="/manifest.json" />
@@ -63,10 +68,9 @@ export default function RootLayout({
       <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       <meta name="apple-mobile-web-app-title" content="D Saing" />
       <meta name="mobile-web-app-capable" content="yes" />
-      <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-      <link rel="icon" href="/icons/icon-192.png" />
-      
-      {/* ✅ Firebase Messaging Service Worker အတွက် Scope သတ်မှတ် */}
+      <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+      <link rel="icon" href="/icons/icon-192x192.png" />
+      {/* ✅ FCM Service Worker အတွက် */}
       <link rel="service-worker" href="/firebase-messaging-sw.js" />
     </>
   );

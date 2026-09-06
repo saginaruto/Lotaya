@@ -535,7 +535,7 @@ export default function BuyerSettings() {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <NotificationToggle
-                    label={language === 'my' ? 'ချက်ဘောက်စာဝင်သည်' : 'Chat Messages'}                    
+                    label={language === 'my' ? 'ချက်ဘောက်စာဝင်သည်' : 'Chat Messages'}
                     checked={notifications.chatMessages}
                     onChange={() => setNotifications({
                       ...notifications,

@@ -19,13 +19,14 @@ import {
   DocumentData,
   QueryDocumentSnapshot,
   DocumentSnapshot,
-  arrayUnion,        // ✅ ထပ်ထည့် - FCM Token array အတွက်
-  arrayRemove         // ✅ ထပ်ထည့် - FCM Token ဖယ်ရှားရန်
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import * as messagingModule from 'firebase/messaging';
 
+// ✅ ခင်ဗျားရဲ့ Firebase Config ကို ထည့်ပါ
 const firebaseConfig = {
   apiKey: "AIzaSyDZp2yLittnCqMuynDJE-YZcgWdAxmymwo",
   authDomain: "d-saing-chat.firebaseapp.com",
@@ -52,7 +53,6 @@ let isMessagingSupported: boolean | null = null;
 export const getMessagingInstance = async () => {
   if (typeof window === 'undefined') return null;
   
-  // ✅ isSupported ကို တစ်ခါပဲ စစ်
   if (isMessagingSupported === null) {
     try {
       isMessagingSupported = await messagingModule.isSupported();
@@ -74,11 +74,10 @@ export const getMessagingInstance = async () => {
   return messagingInstance;
 };
 
-// ✅ FCM Token ရယူရန် Function (ပြင်ဆင်ပြီး)
+// ✅ FCM Token ရယူရန် Function
 export const requestFCMToken = async (userId: string) => {
   if (typeof window === 'undefined') return null;
 
-  // ✅ Notification Permission စစ်
   if (Notification.permission === 'denied') {
     console.warn('⚠️ Notification permission is blocked');
     return null;
@@ -99,23 +98,19 @@ export const requestFCMToken = async (userId: string) => {
       return null;
     }
 
-    // ✅ Service Worker Register - အရင်ဆုံးလုပ်
     let registration: ServiceWorkerRegistration | null = null;
     if ('serviceWorker' in navigator) {
       try {
-        // ✅ အရင်ဆုံး ရှိပြီးသား registration ကိုရှာ
         const existingReg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
         if (existingReg) {
           registration = existingReg;
           console.log('✅ Existing FCM Service Worker found');
         } else {
-          // မရှိရင် အသစ် register လုပ်
           registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
           console.log('✅ FCM Service Worker registered');
         }
       } catch (swError) {
         console.warn('⚠️ FCM Service Worker registration failed:', swError);
-        // Service Worker မရှိရင်လည်း token ရယူကြည့်
       }
     }
 
@@ -125,7 +120,6 @@ export const requestFCMToken = async (userId: string) => {
       return null;
     }
 
-    // ✅ Token ရယူ - serviceWorkerRegistration ထည့်ပြီး
     let token: string;
     if (registration) {
       token = await (messagingModule as any).getToken(messaging, { 
@@ -137,7 +131,6 @@ export const requestFCMToken = async (userId: string) => {
     }
 
     if (token) {
-      // ✅ Token ကို Firestore မှာ array အနေနဲ့ သိမ်း
       const userRef = doc(db, 'users', userId);
       await setDoc(userRef, { 
         fcmTokens: arrayUnion(token) 
@@ -154,7 +147,7 @@ export const requestFCMToken = async (userId: string) => {
   }
 };
 
-// ✅ FCM Token ကို ဖယ်ရှားရန် Function (အသစ်ထည့်)
+// ✅ FCM Token ကို ဖယ်ရှားရန် Function
 export const removeFCMToken = async (userId: string, token: string) => {
   if (typeof window === 'undefined') return;
   
@@ -169,7 +162,7 @@ export const removeFCMToken = async (userId: string, token: string) => {
   }
 };
 
-// ✅ Foreground Message Listener (ပြင်ဆင်ပြီး)
+// ✅ Foreground Message Listener
 export const listenForMessages = async (callback: (payload: any) => void) => {
   if (typeof window === 'undefined') return;
   
@@ -180,7 +173,6 @@ export const listenForMessages = async (callback: (payload: any) => void) => {
       return;
     }
     
-    // ✅ onMessage ကို မှန်ကန်စွာ သုံး
     messagingModule.onMessage(messaging, (payload) => {
       console.log('📱 Foreground message received:', payload);
       callback(payload);
@@ -190,7 +182,7 @@ export const listenForMessages = async (callback: (payload: any) => void) => {
   }
 };
 
-// ✅ Notification Permission စစ်ရန် Helper (အသစ်ထည့်)
+// ✅ Notification Permission စစ်ရန် Helper
 export const checkNotificationPermission = async (): Promise<boolean> => {
   if (typeof window === 'undefined') return false;
   
@@ -220,8 +212,8 @@ export {
   serverTimestamp,
   writeBatch,
   limit,
-  arrayUnion,    // ✅ ထပ်ထည့်
-  arrayRemove,   // ✅ ထပ်ထည့်
+  arrayUnion,
+  arrayRemove,
 };
 
 export type {

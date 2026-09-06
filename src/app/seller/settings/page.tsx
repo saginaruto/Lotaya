@@ -608,23 +608,23 @@ export default function SellerSettings() {
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <NotificationToggle
-                    label={language === 'my' ? 'ချက်ဘောက်စာဝင်သည်' : 'Chat Messages'}                    
+                    label={language === 'my' ? 'ချက်ဘောက်စာဝင်သည်' : 'Chat Messages'}
                     checked={notifications.chatMessages}
                     onChange={() => setNotifications({
                       ...notifications,
                       chatMessages: !notifications.chatMessages
                     })}
                   />
-                  
+
                   <NotificationToggle
-                    label={language === 'my' ? 'မှာယူမှုအသစ်' : 'New Orders'}                    
+                    label={language === 'my' ? 'မှာယူမှုအသစ်' : 'New Orders'}
                     checked={notifications.newOrders}
                     onChange={() => setNotifications({
                       ...notifications,
                       newOrders: !notifications.newOrders
                     })}
                   />
-                  
+
                   <NotificationToggle
                     label={language === 'my' ? 'ပရိုမိုးရှင်းများ' : 'Promotions'}
                     checked={notifications.promotions}
