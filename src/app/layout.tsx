@@ -6,6 +6,7 @@ import { auth, requestFCMToken, listenForMessages } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './globals.css';
 import LanguageProvider, { Language } from '@/components/LanguageProvider';
+import ToastNotification from '@/components/ToastNotification';
 
 export default function RootLayout({
   children,
@@ -14,6 +15,7 @@ export default function RootLayout({
 }) {
   const [language, setLanguage] = useState<Language>('en');
   const [isLoading, setIsLoading] = useState(true);
+  const [toast, setToast] = useState<{ title: string; body: string; senderName?: string } | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -29,14 +31,22 @@ export default function RootLayout({
               
               const title = payload.notification?.title || payload.data?.title || 'မက်ဆေ့ခ်ျအသစ်';
               const body = payload.notification?.body || payload.data?.body || 'မှာယူမှုအသစ် ရောက်ရှိပါပြီ';
+              const senderName = payload.data?.senderName || '';
               
-              // ✅ new Notification ကို ထားပါ
+              // ✅ System Notification
               if (payload.notification) {
                 new Notification(payload.notification.title || 'New Message', {
                   body: payload.notification.body || '',
                   icon: '/logo.png'
                 });
               }
+              
+              // ✅ In-App Toast (App ထဲမှာ Popup ပြမယ်)
+              setToast({
+                title: title,
+                body: body,
+                senderName: senderName,
+              });
             });
             
           } catch (error) {
@@ -101,6 +111,15 @@ export default function RootLayout({
       <body>
         <LanguageProvider initialLanguage={language}>
           {children}
+          {/* ✅ In-App Toast */}
+          {toast && (
+            <ToastNotification
+              message={toast.body}
+              senderName={toast.senderName || toast.title}
+              onClose={() => setToast(null)}
+              duration={5000}
+            />
+          )}
         </LanguageProvider>
       </body>
     </html>

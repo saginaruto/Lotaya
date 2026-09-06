@@ -8,12 +8,10 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-comp
 const firebaseConfig = {
   apiKey: "AIzaSyDZp2yLittnCqMuynDJE-YZcgWdAxmymwo",
   authDomain: "d-saing-chat.firebaseapp.com",
-  databaseURL: "https://d-saing-chat-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "d-saing-chat",
   storageBucket: "d-saing-chat.firebasestorage.app",
   messagingSenderId: "533173820233",
   appId: "1:533173820233:web:93361cab4873f791991898",
-  measurementId: "G-W63WPRF433"
 };
 
 // ၃။ Firebase ကို Initialize လုပ်ခြင်း (Service Worker အတွက် အဓိက)
@@ -35,6 +33,8 @@ self.addEventListener("install", (event) => {
       console.log("📦 Caching assets...");
       return cache.addAll([
         "/",
+        "/messages",
+        "/messages/[chatId]",  // ✅ Dynamic route အတွက် ထည့်ပါ
         "/manifest.json",
         "/icons/icon-192x192.png",
         "/icons/icon-512x512.png"
@@ -58,6 +58,16 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // ✅ messages/[chatId] အတွက် Navigation Preload သုံးပါ
+  if (event.request.mode === 'navigate' && event.request.url.includes('/messages/')) {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match('/messages');
+      })
+    );
+    return;
+  }
+
   if (event.request.method === 'POST') {
     event.respondWith(fetch(event.request));
     return;
@@ -86,7 +96,9 @@ messaging.onBackgroundMessage((payload) => {
   
   const notificationTitle = payload.data?.title || payload.notification?.title || 'D Saing';
   const notificationBody = payload.data?.body || payload.notification?.body || 'New message!';
-  const notificationUrl = payload.data?.url || '/chat';
+  
+  const chatId = payload.data?.chatId || '';
+  const notificationUrl = chatId ? `/messages/${chatId}` : '/messages';
   
   const notificationOptions = {
     body: notificationBody,
@@ -96,6 +108,7 @@ messaging.onBackgroundMessage((payload) => {
     requireInteraction: true,
     data: {
       url: notificationUrl,
+      chatId: chatId,
     },
   };
 
@@ -106,15 +119,22 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   
-  const url = event.notification.data?.url || "/chat";
+  const url = event.notification.data?.url || "/messages";
+  const chatId = event.notification.data?.chatId || '';
   
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      // ရှိပြီးသား Client ကိုရှာပါ
       for (const client of clientList) {
-        if (client.url.includes(url) && "focus" in client) {
+        if (client.url.includes("/messages") && "focus" in client) {
+          // chatId ရှိရင် သီးခြား Chat Room ကိုသွားပါ
+          if (chatId && client.url.includes(chatId)) {
+            return client.focus();
+          }
           return client.focus();
         }
       }
+      // မရှိရင် အသစ်ဖွင့်ပါ
       if (clients.openWindow) {
         return clients.openWindow(url);
       }
