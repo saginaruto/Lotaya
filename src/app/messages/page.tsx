@@ -1,3 +1,4 @@
+// src/app/messages/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -48,12 +49,11 @@ export default function MessagesPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // ✅ နောက်ပြန်နှိပ်ရင် ဘယ်ကိုသွားမလဲ
   const handleBack = () => {
     if (selectedChatId) {
-      setSelectedChatId(null); // Chat Room ကနေ Chat List ကိုပြန်
+      setSelectedChatId(null);
     } else {
-      router.push('/'); // Chat List ကနေ Home ကိုပြန်
+      router.push('/');
     }
   };
 
@@ -61,11 +61,11 @@ export default function MessagesPage() {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#000000', 
+        backgroundColor: 'var(--background)', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center', 
-        color: '#ffffff' 
+        color: 'var(--foreground)' 
       }}>
         Loading...
       </div>
@@ -73,20 +73,18 @@ export default function MessagesPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '16px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)', padding: '16px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto', height: 'calc(100vh - 32px)' }}>
-        {/* Header - Back Button တစ်ခုပဲရှိတယ် */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
           marginBottom: '16px'
         }}>
-          {/* ✅ မြှားတစ်ခုပဲ - နှိပ်ရင် ဘယ်ကိုသွားမလဲဆိုတာ handleBack က ဆုံးဖြတ်ပေးမယ် */}
           <button
             onClick={handleBack}
             style={{ 
-              color: '#38bdf8', 
+              color: 'var(--accent)', 
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -101,7 +99,7 @@ export default function MessagesPage() {
           </button>
 
           <h1 style={{ 
-            color: '#ffffff', 
+            color: 'var(--foreground)', 
             fontSize: '18px', 
             fontWeight: '700', 
             margin: 0 
@@ -113,10 +111,9 @@ export default function MessagesPage() {
           </h1>
         </div>
 
-        {/* Chat Container */}
         <div style={{
-          backgroundColor: '#121212',
-          border: '1px solid #262626',
+          backgroundColor: 'var(--card-background)',
+          border: '1px solid var(--card-border)',
           borderRadius: '12px',
           overflow: 'hidden',
           height: 'calc(100% - 60px)'

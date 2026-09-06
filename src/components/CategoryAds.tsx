@@ -1,3 +1,4 @@
+// src/components/CategoryAds.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,12 +24,10 @@ export default function CategoryAds({
   const [mergedAds, setMergedAds] = useState<Record<string, AdItem[]>>({});
   const [loading, setLoading] = useState(true);
   
-  // ===== Random ဖြစ်ပြီးသား Category Names နဲ့ Ads တွေကို သိမ်းမယ် =====
   const [randomCategoryNames, setRandomCategoryNames] = useState<string[]>([]);
   const [randomAdsMap, setRandomAdsMap] = useState<Record<string, AdItem[]>>({});
   const [isRandomized, setIsRandomized] = useState(false);
 
-  // ===== Random Shuffle Function =====
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -50,7 +49,6 @@ export default function CategoryAds({
     return grouped;
   };
 
-  // ===== sessionStorage ကနေ သိမ်းထားတာကိုယူမယ် =====
   const getCachedRandomData = () => {
     try {
       const cached = sessionStorage.getItem('categoryAdsRandom');
@@ -67,7 +65,6 @@ export default function CategoryAds({
     return null;
   };
 
-  // ===== sessionStorage မှာ သိမ်းမယ် =====
   const saveToSessionStorage = (data: { categoryNames: string[]; adsMap: Record<string, AdItem[]> }) => {
     try {
       sessionStorage.setItem('categoryAdsRandom', JSON.stringify({
@@ -79,17 +76,14 @@ export default function CategoryAds({
     }
   };
 
-  // ===== App ဝင်တဲ့အခါ တစ်ခါပဲ Random လုပ်မယ် =====
   useEffect(() => {
     const unsubscribe = listenAds((items: AdItem[]) => {
       const grouped = groupAdsByCategory(items);
       setMergedAds(grouped);
       
-      // ✅ sessionStorage ကနေ ရှိမရှိစစ်ပါ
       const cached = getCachedRandomData();
       
       if (cached) {
-        // ✅ ရှိရင် သိမ်းထားတာကိုပဲသုံးမယ်
         setRandomCategoryNames(cached.categoryNames);
         setRandomAdsMap(cached.adsMap);
         setIsRandomized(true);
@@ -98,9 +92,7 @@ export default function CategoryAds({
         return;
       }
       
-      // ✅ မရှိရင် အသစ် Random လုပ်ပြီး သိမ်းမယ်
       if (!isRandomized) {
-        // Category Names ကို Random လုပ်ပါ
         const allCategories = Array.from(new Set([
           ...Object.keys(CATEGORY_ADS || {}),
           ...Object.keys(grouped)
@@ -108,7 +100,6 @@ export default function CategoryAds({
         
         const shuffledCategories = shuffleArray(allCategories);
         
-        // Category တစ်ခုချင်းစီအတွက် Ads တွေကိုလည်း Random လုပ်ပါ
         const shuffledAdsMap: Record<string, AdItem[]> = {};
         shuffledCategories.forEach((cat) => {
           let ads: AdItem[] = [];
@@ -120,12 +111,10 @@ export default function CategoryAds({
           shuffledAdsMap[cat] = shuffleArray(ads);
         });
         
-        // ✅ State မှာသိမ်းပါ
         setRandomCategoryNames(shuffledCategories);
         setRandomAdsMap(shuffledAdsMap);
         setIsRandomized(true);
         
-        // ✅ sessionStorage မှာသိမ်းပါ
         saveToSessionStorage({
           categoryNames: shuffledCategories,
           adsMap: shuffledAdsMap
@@ -139,10 +128,7 @@ export default function CategoryAds({
     });
 
     return () => unsubscribe();
-  }, []); // ✅ ဒီ useEffect က တစ်ခါပဲ run မယ်
-
-  // ❌ Category သို့ Location ပြောင်းရင် Random ပြန်မလုပ်တော့ဘူး
-  // ✅ ဒီ useEffect ကိုဖယ်လိုက်ပါ
+  }, []);
 
   const isRecentProduct = (createdAt: string | undefined): boolean => {
     if (!createdAt) return false;
@@ -164,36 +150,32 @@ export default function CategoryAds({
     return (
       <div style={{ 
         padding: "16px 16px 40px 16px",
-        backgroundColor: "#000000",
+        backgroundColor: "var(--background)",
         flexShrink: 0,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '200px'
       }}>
-        <div style={{ color: '#888888', fontSize: '14px' }}>Loading products...</div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Loading products...</div>
       </div>
     );
   }
 
-  // ===== Random ဖြစ်ပြီးသား Category Names နဲ့ Ads တွေကိုသုံးမယ် =====
   const categoryNames = randomCategoryNames.length > 0 ? randomCategoryNames : [];
   const getCategoryAds = (categoryName: string): AdItem[] => {
     return randomAdsMap[categoryName] || [];
   };
 
-  // ===== Category နဲ့ Location ကို စစ်ပြီး သက်ဆိုင်တာပဲပြမယ် =====
   const getFilteredCategoryAds = (categoryName: string): AdItem[] => {
     let ads = getCategoryAds(categoryName);
     
-    // ✅ selectedCategory နဲ့ ကိုက်ညီမှုစစ်ပါ
     if (selectedCategory !== "All") {
       ads = ads.filter((ad) => 
         ad.category?.toLowerCase() === selectedCategory.toLowerCase()
       );
     }
     
-    // ✅ selectedLocation နဲ့ ကိုက်ညီမှုစစ်ပါ
     if (selectedLocation !== "All") {
       ads = ads.filter((ad) =>
         ad.location?.trim().toLowerCase().includes(selectedLocation.trim().toLowerCase())
@@ -206,7 +188,7 @@ export default function CategoryAds({
   return (
     <div style={{ 
       padding: "16px 16px 40px 16px",
-      backgroundColor: "#000000",
+      backgroundColor: "var(--background)",
       flexShrink: 0
     }}>
       {categoryNames.map((categoryName) => {
@@ -216,10 +198,10 @@ export default function CategoryAds({
         return (
           <section key={categoryName} style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "28px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h2 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "#ffffff" }}>
+              <h2 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "var(--foreground)" }}>
                 {categoryName}
               </h2>
-              <span style={{ fontSize: "12px", color: "#888888", cursor: "pointer" }}>
+              <span style={{ fontSize: "12px", color: "var(--text-secondary)", cursor: "pointer" }}>
                 See all
               </span>
             </div>
@@ -239,8 +221,8 @@ export default function CategoryAds({
                   <div
                     key={`${ad.id}-${categoryName}`}
                     style={{
-                      backgroundColor: "#121212",
-                      border: isRecent ? "2px solid #38bdf8" : "1px solid #262626",
+                      backgroundColor: "var(--card-background)",
+                      border: isRecent ? "2px solid var(--accent)" : "1px solid var(--card-border)",
                       borderRadius: "16px",
                       overflow: "hidden",
                       boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
@@ -251,11 +233,11 @@ export default function CategoryAds({
                     onClick={() => handleProductClick(ad)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = "scale(1.02)";
-                      e.currentTarget.style.borderColor = "#38bdf8";
+                      e.currentTarget.style.borderColor = "var(--accent)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = "scale(1)";
-                      e.currentTarget.style.borderColor = isRecent ? "#38bdf8" : "#262626";
+                      e.currentTarget.style.borderColor = isRecent ? "var(--accent)" : "var(--card-border)";
                     }}
                   >
                     {isRecent && (
@@ -264,7 +246,7 @@ export default function CategoryAds({
                           position: "absolute",
                           top: "8px",
                           right: "8px",
-                          backgroundColor: "#38bdf8",
+                          backgroundColor: "var(--accent)",
                           color: "#000000",
                           fontSize: "9px",
                           fontWeight: "700",
@@ -277,13 +259,12 @@ export default function CategoryAds({
                       </div>
                     )}
 
-                    {/* ====== Product Image ====== */}
                     <div 
                       style={{ 
                         position: "relative", 
                         width: "100%", 
                         height: "200px", 
-                        backgroundColor: "#1a1a1a",
+                        backgroundColor: "var(--hover-background)",
                         overflow: "hidden"
                       }}
                     >
@@ -307,7 +288,7 @@ export default function CategoryAds({
                             position: "absolute",
                             top: "8px",
                             left: "8px",
-                            backgroundColor: "#ef4444",
+                            backgroundColor: "var(--error)",
                             color: "#ffffff",
                             fontSize: "10px",
                             fontWeight: "700",
@@ -320,7 +301,6 @@ export default function CategoryAds({
                         </div>
                       )}
 
-                      {/* ====== Available at - အပေါ်ထောင့် (ညာဘက်) ====== */}
                       {ad.city && (
                         <div
                           style={{
@@ -340,7 +320,6 @@ export default function CategoryAds({
                         </div>
                       )}
 
-                      {/* ====== Overlay Text - ဘယ်ဘက်အောက်ထောင့် ====== */}
                       <div
                         style={{
                           position: "absolute",

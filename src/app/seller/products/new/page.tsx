@@ -1,3 +1,4 @@
+// AddProduct.tsx - Dark/Light Mode အတွက် ပြင်ဆင်ပြီး
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -20,7 +21,6 @@ export default function AddProduct() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Form State
   const [productName, setProductName] = useState('');
   const [productPrice, setProductPrice] = useState('');
   const [productCategory, setProductCategory] = useState('');
@@ -59,12 +59,10 @@ export default function AddProduct() {
     return () => unsubscribe();
   }, [router]);
 
-  // ✅ ပုံတင်တဲ့ function (Cloudinary ကိုသုံးမယ်)
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // ပုံအရွယ်အစားစစ်ပါ (Max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Image size must be less than 5MB');
       return;
@@ -81,14 +79,12 @@ export default function AddProduct() {
       alert('❌ Failed to upload image. Please try again.');
     } finally {
       setUploadingImage(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   };
 
-  // ✅ ပုံဖယ်တဲ့ function
   const removeImage = () => {
     setProductImage('');
     if (fileInputRef.current) {
@@ -140,36 +136,35 @@ export default function AddProduct() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--foreground)' }}>
         {t('common.loading')}
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '16px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)', padding: '16px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <Link href="/seller/dashboard" style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '14px' }}>
+        <Link href="/seller/dashboard" style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '14px' }}>
           <ArrowLeft size={18} />
         </Link>
 
         <div style={{
-          backgroundColor: '#121212',
-          border: '1px solid #262626',
+          backgroundColor: 'var(--card-background)',
+          border: '1px solid var(--card-border)',
           borderRadius: '14px',
           padding: '20px'
         }}>
-          <h1 style={{ color: '#ffffff', fontSize: '20px', fontWeight: '700', margin: '0 0 4px 0' }}>
+          <h1 style={{ color: 'var(--foreground)', fontSize: '20px', fontWeight: '700', margin: '0 0 4px 0' }}>
             {t('Add Title')}
           </h1>
-          <p style={{ color: '#888888', fontSize: '13px', margin: '0 0 20px 0' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: '0 0 20px 0' }}>
             {t('Add Description')}
           </p>
 
           <form onSubmit={handleSubmit}>
-            {/* Product Name */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ color: '#888888', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
                 {t('Product Name')}
               </label>
               <input
@@ -181,10 +176,10 @@ export default function AddProduct() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#1a1a1a',
-                  border: '1px solid #262626',
+                  backgroundColor: 'var(--input-background)',
+                  border: '1px solid var(--input-border)',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: 'var(--foreground)',
                   fontSize: '14px',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -192,9 +187,8 @@ export default function AddProduct() {
               />
             </div>
 
-            {/* Brand */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ color: '#888888', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
                 {t('Product Brand')}
               </label>
               <input
@@ -206,10 +200,10 @@ export default function AddProduct() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#1a1a1a',
-                  border: '1px solid #262626',
+                  backgroundColor: 'var(--input-background)',
+                  border: '1px solid var(--input-border)',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: 'var(--foreground)',
                   fontSize: '14px',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -217,9 +211,8 @@ export default function AddProduct() {
               />
             </div>
 
-            {/* Price */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ color: '#888888', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
                 {t('product.price')}
               </label>
               <input
@@ -231,10 +224,10 @@ export default function AddProduct() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#1a1a1a',
-                  border: '1px solid #262626',
+                  backgroundColor: 'var(--input-background)',
+                  border: '1px solid var(--input-border)',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: 'var(--foreground)',
                   fontSize: '14px',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -242,9 +235,8 @@ export default function AddProduct() {
               />
             </div>
 
-            {/* Category */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ color: '#888888', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
                 {t('product.category')}
               </label>
               <select
@@ -254,10 +246,10 @@ export default function AddProduct() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#1a1a1a',
-                  border: '1px solid #262626',
+                  backgroundColor: 'var(--input-background)',
+                  border: '1px solid var(--input-border)',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: 'var(--foreground)',
                   fontSize: '13px',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -270,9 +262,8 @@ export default function AddProduct() {
               </select>
             </div>
 
-            {/* Stock Quantity */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ color: '#888888', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
                 {t('product.stock')}
               </label>
               <input
@@ -285,10 +276,10 @@ export default function AddProduct() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#1a1a1a',
-                  border: '1px solid #262626',
+                  backgroundColor: 'var(--input-background)',
+                  border: '1px solid var(--input-border)',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: 'var(--foreground)',
                   fontSize: '14px',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -296,9 +287,8 @@ export default function AddProduct() {
               />
             </div>
 
-            {/* Location - Disabled */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ color: '#888888', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
                 {t('product.location')}
               </label>
               <input
@@ -308,10 +298,10 @@ export default function AddProduct() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#0a0a0a',
-                  border: '1px solid #262626',
+                  backgroundColor: 'var(--card-background)',
+                  border: '1px solid var(--card-border)',
                   borderRadius: '8px',
-                  color: '#666666',
+                  color: 'var(--text-muted)',
                   fontSize: '13px',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -320,9 +310,8 @@ export default function AddProduct() {
               />
             </div>
 
-            {/* Discount */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ color: '#888888', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
                 {t('product.discount')}
               </label>
               <input
@@ -333,10 +322,10 @@ export default function AddProduct() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#1a1a1a',
-                  border: '1px solid #262626',
+                  backgroundColor: 'var(--input-background)',
+                  border: '1px solid var(--input-border)',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: 'var(--foreground)',
                   fontSize: '14px',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -344,9 +333,8 @@ export default function AddProduct() {
               />
             </div>
 
-            {/* ===== ✅ Image Upload ===== */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ color: '#888888', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
                 {t('product.image')}
               </label>
               
@@ -358,7 +346,6 @@ export default function AddProduct() {
                   flexWrap: 'wrap'
                 }}
               >
-                {/* Hidden file input */}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -368,7 +355,6 @@ export default function AddProduct() {
                   style={{ display: 'none' }}
                 />
 
-                {/* Upload Button */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -378,10 +364,10 @@ export default function AddProduct() {
                     alignItems: 'center',
                     gap: '8px',
                     padding: '10px 16px',
-                    backgroundColor: '#1a1a1a',
-                    border: '1px solid #262626',
+                    backgroundColor: 'var(--input-background)',
+                    border: '1px solid var(--input-border)',
                     borderRadius: '8px',
-                    color: '#ffffff',
+                    color: 'var(--foreground)',
                     cursor: uploadingImage ? 'default' : 'pointer',
                     opacity: uploadingImage ? 0.5 : 1,
                     fontSize: '13px'
@@ -397,7 +383,6 @@ export default function AddProduct() {
                   )}
                 </button>
 
-                {/* Camera Button (Mobile) */}
                 <button
                   type="button"
                   onClick={() => {
@@ -412,10 +397,10 @@ export default function AddProduct() {
                     alignItems: 'center',
                     gap: '8px',
                     padding: '10px 16px',
-                    backgroundColor: '#1a1a1a',
-                    border: '1px solid #262626',
+                    backgroundColor: 'var(--input-background)',
+                    border: '1px solid var(--input-border)',
                     borderRadius: '8px',
-                    color: '#ffffff',
+                    color: 'var(--foreground)',
                     cursor: uploadingImage ? 'default' : 'pointer',
                     opacity: uploadingImage ? 0.5 : 1,
                     fontSize: '13px'
@@ -425,7 +410,6 @@ export default function AddProduct() {
                   Take Photo
                 </button>
 
-                {/* Remove Button (if image exists) */}
                 {productImage && (
                   <button
                     type="button"
@@ -435,10 +419,10 @@ export default function AddProduct() {
                       alignItems: 'center',
                       gap: '4px',
                       padding: '6px 12px',
-                      backgroundColor: '#2a1a1a',
-                      border: '1px solid #ef4444',
+                      backgroundColor: 'var(--card-background)',
+                      border: '1px solid var(--error)',
                       borderRadius: '6px',
-                      color: '#ef4444',
+                      color: 'var(--error)',
                       cursor: 'pointer',
                       fontSize: '12px'
                     }}
@@ -449,15 +433,14 @@ export default function AddProduct() {
                 )}
               </div>
 
-              {/* Image Preview */}
               {productImage && (
                 <div
                   style={{
                     marginTop: '8px',
                     padding: '8px',
-                    backgroundColor: '#1a1a1a',
+                    backgroundColor: 'var(--input-background)',
                     borderRadius: '8px',
-                    border: '1px solid #262626'
+                    border: '1px solid var(--input-border)'
                   }}
                 >
                   <img
@@ -477,9 +460,8 @@ export default function AddProduct() {
               )}
             </div>
 
-            {/* Description */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ color: '#888888', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
                 {t('product.description')}
               </label>
               <textarea
@@ -490,10 +472,10 @@ export default function AddProduct() {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  backgroundColor: '#1a1a1a',
-                  border: '1px solid #262626',
+                  backgroundColor: 'var(--input-background)',
+                  border: '1px solid var(--input-border)',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: 'var(--foreground)',
                   fontSize: '14px',
                   outline: 'none',
                   resize: 'vertical',
@@ -502,14 +484,13 @@ export default function AddProduct() {
               />
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={submitting || uploadingImage}
               style={{
                 width: '100%',
                 padding: '12px',
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--accent)',
                 color: '#000000',
                 border: 'none',
                 borderRadius: '8px',

@@ -1,3 +1,4 @@
+// src/components/BannerSlider.tsx
 'use client';
 
 import { MapPin, ChevronRight } from "lucide-react";
@@ -48,7 +49,7 @@ export default function BannerSlider({
             height: "100%",
             scrollSnapAlign: "start",
             position: "relative",
-            backgroundColor: "#121212",
+            backgroundColor: "var(--card-background)",
             display: "flex",
             flexDirection: "column"
           }}
@@ -57,7 +58,7 @@ export default function BannerSlider({
           <div style={{ 
             flex: 1,
             width: "100%", 
-            backgroundColor: "#1a1a1a",
+            backgroundColor: "var(--hover-background)",
             position: "relative",
             minHeight: 0
           }}>
@@ -76,7 +77,7 @@ export default function BannerSlider({
                 position: "absolute",
                 top: "12px",
                 left: "12px",
-                backgroundColor: "#ef4444",
+                backgroundColor: "var(--error)",
                 color: "#ffffff",
                 fontSize: "11px",
                 fontWeight: "700",
@@ -101,12 +102,12 @@ export default function BannerSlider({
             boxSizing: "border-box"
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "13px", fontWeight: "600", color: "#38bdf8" }}>
+              <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--accent)" }}>
                 {banner.brand}
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
                 <MapPin size={12} style={{ color: "#ef4444" }} />
-                <span style={{ fontSize: "12px", color: "#888888" }}>{banner.location}</span>
+                <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{banner.location}</span>
               </div>
             </div>
             <h3 style={{ 

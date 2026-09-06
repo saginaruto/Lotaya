@@ -1,3 +1,4 @@
+// src/app/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +11,6 @@ import LocationModal from '@/components/LocationModal';
 import Sidebar from '@/components/Sidebar';
 import { useAutoSlide } from '@/hooks/useAutoSlide';
 import { CATEGORIES } from '@/data/categories';
-// 🔥 ဒီနေရာမှာ ပြင်ထားပါတယ်
 import { getBanners, listenBanners, Banner } from '@/data/banners';
 import { getCategoryAds, listenCategoryAds, CategoryAd } from '@/data/categoryAds';
 import { getAds, listenAds, AdItem } from '@/data/Ads';
@@ -23,6 +23,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { useLanguage } from '@/components/LanguageProvider';
 import { translateCity, translateState } from '@/data/cities';
+import Image from 'next/image';
 
 export default function Home() {
   const { language, t } = useLanguage();
@@ -38,27 +39,21 @@ export default function Home() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
 
-  // Authentication State
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<'user' | 'seller' | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Chat Modal
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [chatProduct, setChatProduct] = useState<any>(null);
 
-  // Product Detail Modal
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [canChatFromFeaturedAd, setCanChatFromFeaturedAd] = useState(true);
 
-  // ✅ Install Button State
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
   
-  // 🔥 Banners State (Firebase ကနေရယူမယ်)
   const [banners, setBanners] = useState<Banner[]>([]);
-  // 🔥 Category Ads State (Firebase ကနေရယူမယ်)
   const [categoryAds, setCategoryAds] = useState<CategoryAd[]>([]);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,7 +63,6 @@ export default function Home() {
     loc.toLowerCase().includes(locationSearch.toLowerCase())
   );
 
-  // 🔥 Live Products Listener
   useEffect(() => {
     const unsubscribe = listenAds((items: AdItem[]) => {
       setLiveProducts(items.filter((item) => item.sellerId));
@@ -77,7 +71,6 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
-  // 🔥 Banners Listener
   useEffect(() => {
     const unsubscribe = listenBanners((items: Banner[]) => {
       setBanners(items);
@@ -86,7 +79,6 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
-  // 🔥 Category Ads Listener
   useEffect(() => {
     const unsubscribe = listenCategoryAds((items: CategoryAd[]) => {
       setCategoryAds(items);
@@ -95,7 +87,6 @@ export default function Home() {
     return () => unsubscribe();
   }, []);
 
-  // Get current user and role from Firestore
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
@@ -118,7 +109,6 @@ export default function Home() {
 
   const { currentIndex, setCurrentIndex, containerRef, handleUserInteraction } = useAutoSlide(banners);
 
-  // ✅ PWA Install Prompt
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -138,7 +128,6 @@ export default function Home() {
     };
   }, []);
 
-  // ✅ Install Button Handler
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -157,7 +146,6 @@ export default function Home() {
     setShowSplash(false);
   };
 
-  // Product Click Handler
   const handleProductClick = (product: any, allowChat = true) => {
     setCanChatFromFeaturedAd(allowChat);
     setSelectedProduct({
@@ -169,7 +157,6 @@ export default function Home() {
   const handleFeaturedBannerClick = (banner: any) => {
     if (!banner.targetSellerId) return;
 
-    // 🔥 ရောင်းသူဆိုရင် allowChat: false ပို့ပါ
     const allowChat = userRole !== 'seller';
     handleProductClick({
       ...banner,
@@ -179,7 +166,6 @@ export default function Home() {
     }, allowChat);
   };
 
-  // Chat Now Handler
   const handleChatNow = (product: any) => {
     setChatProduct(product);
     setIsChatModalOpen(true);
@@ -188,10 +174,8 @@ export default function Home() {
   const getFilteredSearchResults = (query: string) => {
   const searchLower = query.toLowerCase().trim();
   
-  // 🔥 Category Ads နဲ့ Live Products တွေကို ပေါင်းပြီး search လုပ်မယ်
   const allItems = [...categoryAds, ...liveProducts];
 
-    // ရှာဖွေမှု စာသား မရှိရင် အကုန်ပြပါ
     if (!searchLower) {
       return allItems;
     }
@@ -202,12 +186,11 @@ export default function Home() {
       const matchesLocation = selectedLocation === 'All' ||
         (item.location?.toLowerCase() || '').includes(selectedLocation.toLowerCase());
       const matchesSearch = [item.brand, item.title, item.location, item.category]
-        .some(field => field?.toLowerCase().includes(searchLower)); // ✅ query ကိုသုံးပါ
+        .some(field => field?.toLowerCase().includes(searchLower));
       return matchesCategory && matchesLocation && matchesSearch;
     });
   };
 
-  // Search Function
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     
@@ -240,8 +223,8 @@ export default function Home() {
   return (
     <div 
       style={{ 
-        backgroundColor: "#000000",
-        color: "#ffffff",
+        backgroundColor: "var(--background)",
+        color: "var(--foreground)",
         height: "100vh",
         maxWidth: "100vw",
         overflow: "hidden",
@@ -279,7 +262,6 @@ export default function Home() {
           position: "relative"
         }}
       >
-        {/* Search Results Overlay */}
         {isSearching && (
           <div
             style={{
@@ -288,7 +270,7 @@ export default function Home() {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: "#000000",
+              backgroundColor: "var(--background)",
               zIndex: 15,
               padding: "16px",
               overflowY: "auto",
@@ -296,7 +278,7 @@ export default function Home() {
             }}
           >
             <div style={{ marginBottom: "12px" }}>
-              <span style={{ color: "#888888", fontSize: "13px" }}>
+              <span style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
                 {t('common.found')} {searchResults.length} {t('common.result')}{searchResults.length > 1 ? 's' : ''} "{searchQuery}"
               </span>
             </div>
@@ -312,16 +294,16 @@ export default function Home() {
                   height: "100%"
                 }}
               >
-                <Search size={48} style={{ color: "#333333", marginBottom: "16px" }} />
-                <h3 style={{ color: "#ffffff", fontSize: "18px", margin: 0 }}>{t('common.noResults')}</h3>
-                <p style={{ color: "#888888", fontSize: "14px", marginTop: "8px", textAlign: "center" }}>
+                <Search size={48} style={{ color: "var(--text-muted)", marginBottom: "16px" }} />
+                <h3 style={{ color: "var(--foreground)", fontSize: "18px", margin: 0 }}>{t('common.noResults')}</h3>
+                <p style={{ color: "var(--text-secondary)", fontSize: "14px", marginTop: "8px", textAlign: "center" }}>
                   {t('common.noResultsDesc')} "{searchQuery}"
                 </p>
                 <button
                   onClick={clearSearch}
                   style={{
                     marginTop: "16px",
-                    backgroundColor: "#ffffff",
+                    backgroundColor: "var(--accent)",
                     color: "#000000",
                     border: "none",
                     borderRadius: "8px",
@@ -346,8 +328,8 @@ export default function Home() {
                   <div
                     key={`${item.id}-${index}`}
                     style={{
-                      backgroundColor: "#121212",
-                      border: "1px solid #262626",
+                      backgroundColor: "var(--card-background)",
+                      border: "1px solid var(--card-border)",
                       borderRadius: "12px",
                       overflow: "hidden",
                       display: "flex",
@@ -355,12 +337,11 @@ export default function Home() {
                       cursor: "pointer"
                     }}
                     onClick={() => {
-                      // 🔥 ရောင်းသူဆိုရင် allowChat: false ပို့ပါ
                       const allowChat = userRole !== 'seller';
                       handleProductClick(item, allowChat);
                     }}
                   >
-                    <div style={{ position: "relative", width: "100%", height: "120px", backgroundColor: "#1a1a1a" }}>
+                    <div style={{ position: "relative", width: "100%", height: "120px", backgroundColor: "var(--hover-background)" }}>
                       <img 
                         src={item.image} 
                         alt={item.title} 
@@ -375,7 +356,7 @@ export default function Home() {
                           position: "absolute",
                           top: "6px",
                           left: "6px",
-                          backgroundColor: "#ef4444",
+                          backgroundColor: "var(--error)",
                           color: "#ffffff",
                           fontSize: "9px",
                           fontWeight: "700",
@@ -401,19 +382,19 @@ export default function Home() {
                       </div>
                     </div>
                     <div style={{ padding: "8px 10px" }}>
-                      <span style={{ fontSize: "10px", fontWeight: "600", color: "#38bdf8", display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <span style={{ fontSize: "10px", fontWeight: "600", color: "var(--accent)", display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {item.brand}
                       </span>
-                      <h4 style={{ margin: "2px 0", fontSize: "11px", fontWeight: "600", color: "#ffffff", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.3, height: "28px" }}>
+                      <h4 style={{ margin: "2px 0", fontSize: "11px", fontWeight: "600", color: "var(--foreground)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.3, height: "28px" }}>
                         {item.title}
                       </h4>
                       <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
                         <MapPin size={9} style={{ color: "#ef4444" }} />
-                        <span style={{ fontSize: "9px", color: "#888888" }}>
+                        <span style={{ fontSize: "9px", color: "var(--text-secondary)" }}>
                         {item.location}
                       </span>
                       </div>
-                      <span style={{ fontSize: "10px", fontWeight: "700", color: "#22c55e", display: "block", marginTop: "2px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: "700", color: "var(--success)", display: "block", marginTop: "2px" }}>
                         {item.price} MMK
                       </span>
                     </div>
@@ -424,7 +405,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Banner Slider - Category "All" ရွေးထားရင် နဲ့ Search မလုပ်ထားရင်ပဲ ပြမယ် */}
         {selectedCategory === "All" && !isSearching && banners.length > 0 && (
           <BannerSlider
             FEATURED_BANNERS={banners}
@@ -436,7 +416,6 @@ export default function Home() {
           />
         )}
 
-        {/* 🔥 Category Ads - Search မလုပ်ထားမှပဲ ပြမယ်၊ userRole ကိုပါပို့မယ် */}
         {!isSearching && (
           <CategoryAds
             selectedCategory={selectedCategory}
@@ -448,7 +427,6 @@ export default function Home() {
         )}
       </main>
 
-      {/* ✅ PWA Install Button */}
       {showInstallBtn && (
         <button
           onClick={handleInstallClick}
@@ -457,7 +435,7 @@ export default function Home() {
             bottom: "20px",
             left: "50%",
             transform: "translateX(-50%)",
-            backgroundColor: "#ffffff",
+            backgroundColor: "var(--accent)",
             color: "#000000",
             border: "none",
             borderRadius: "12px",
@@ -466,7 +444,7 @@ export default function Home() {
             fontWeight: "700",
             cursor: "pointer",
             zIndex: 9999,
-            boxShadow: "0 8px 32px rgba(255,255,255,0.2)",
+            boxShadow: "0 8px 32px rgba(56,189,248,0.3)",
             display: "flex",
             alignItems: "center",
             gap: "10px",
@@ -501,7 +479,6 @@ export default function Home() {
         userRole={userRole}
       />
 
-      {/* Product Detail Modal */}
       <ProductDetailModal
         isOpen={isProductModalOpen}
         onClose={() => {
@@ -513,7 +490,6 @@ export default function Home() {
         allowChat={canChatFromFeaturedAd}
       />
 
-      {/* Chat Modal */}
       <ChatModal
         isOpen={isChatModalOpen}
         onClose={() => {

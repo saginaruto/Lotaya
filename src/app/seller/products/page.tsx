@@ -1,3 +1,4 @@
+// ManageProducts.tsx - Dark/Light Mode အတွက် ပြင်ဆင်ပြီး
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -45,7 +46,6 @@ export default function ManageProducts() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Product>>({});
 
-  // ✅ Helper function for createdAt
   const getCreatedAtTime = (createdAt: any): number => {
     if (!createdAt) return 0;
     
@@ -94,7 +94,6 @@ export default function ManageProducts() {
     return () => unsubscribeAuth();
   }, [router]);
 
-  // Real-time listener - ✅ ဒီနေရာကို သေချာကြည့်ပါ
   useEffect(() => {
     if (!user) return;
 
@@ -113,7 +112,6 @@ export default function ManageProducts() {
             ...doc.data() as Omit<Product, 'id'>
           }));
           
-          // ✅ localeCompare မပါဘူး - getCreatedAtTime ကိုသုံးထားတယ်
           const sortedProducts = productList.sort((a, b) => {
             const timeA = getCreatedAtTime(a.createdAt);
             const timeB = getCreatedAtTime(b.createdAt);
@@ -137,7 +135,6 @@ export default function ManageProducts() {
     return () => unsubscribeProducts();
   }, [user]);
 
-  // Search filter
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredProducts(products);
@@ -152,7 +149,6 @@ export default function ManageProducts() {
     }
   }, [searchTerm, products]);
 
-  // Delete product
   const handleDelete = async (productId: string, productTitle: string) => {
     if (!confirm(t('Delete Confirm').replace('{title}', productTitle))) {
       return;
@@ -167,7 +163,6 @@ export default function ManageProducts() {
     }
   };
 
-  // Start editing
   const startEditing = (product: Product) => {
     setEditingId(product.id);
     setEditData({
@@ -182,13 +177,11 @@ export default function ManageProducts() {
     });
   };
 
-  // Cancel editing
   const cancelEditing = () => {
     setEditingId(null);
     setEditData({});
   };
 
-  // Save edit
   const handleSaveEdit = async (productId: string) => {
     try {
       await updateDoc(doc(db, 'products', productId), {
@@ -211,45 +204,43 @@ export default function ManageProducts() {
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#000000', 
+        backgroundColor: 'var(--background)', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        color: '#ffffff'
+        color: 'var(--foreground)'
       }}>
         {t('common.loading')}
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#000000', 
+        backgroundColor: 'var(--background)', 
         display: 'flex', 
         flexDirection: 'column',
         alignItems: 'center', 
         justifyContent: 'center',
-        color: '#ffffff',
+        color: 'var(--foreground)',
         gap: '16px',
         padding: '20px'
       }}>
-        <div style={{ color: '#ef4444', fontSize: '20px' }}>⚠️ {t('common.error')}</div>
-        <div style={{ color: '#888888', fontSize: '14px', textAlign: 'center', maxWidth: '400px' }}>
+        <div style={{ color: 'var(--error)', fontSize: '20px' }}>⚠️ {t('common.error')}</div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', maxWidth: '400px' }}>
           {error}
         </div>
         <button
           onClick={() => window.location.reload()}
           style={{
             padding: '10px 24px',
-            backgroundColor: '#38bdf8',
+            backgroundColor: 'var(--accent)',
             color: '#000000',
             border: 'none',
             borderRadius: '8px',
@@ -268,9 +259,8 @@ export default function ManageProducts() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '20px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)', padding: '20px' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        {/* Header */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -282,11 +272,11 @@ export default function ManageProducts() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Link 
               href="/seller/dashboard" 
-              style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
             >
               <ArrowLeft size={20} />
             </Link>
-            <h1 style={{ color: '#ffffff', fontSize: '20px', fontWeight: '700', margin: 0 }}>
+            <h1 style={{ color: 'var(--foreground)', fontSize: '20px', fontWeight: '700', margin: 0 }}>
               {t('Products')}
             </h1>
           </div>
@@ -298,7 +288,7 @@ export default function ManageProducts() {
               alignItems: 'center',
               gap: '8px',
               padding: '10px 16px',
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--accent)',
               color: '#000000',
               borderRadius: '10px',
               textDecoration: 'none',
@@ -311,7 +301,6 @@ export default function ManageProducts() {
           </Link>
         </div>
 
-        {/* Search Bar */}
         <div style={{
           position: 'relative',
           marginBottom: '20px'
@@ -325,20 +314,20 @@ export default function ManageProducts() {
               width: '100%',
               padding: '12px 16px',
               paddingLeft: '44px',
-              backgroundColor: '#1a1a1a',
-              border: '1px solid #262626',
+              backgroundColor: 'var(--input-background)',
+              border: '1px solid var(--input-border)',
               borderRadius: '12px',
-              color: '#ffffff',
+              color: 'var(--foreground)',
               fontSize: '14px',
               outline: 'none',
               boxSizing: 'border-box',
               transition: 'border-color 0.2s'
             }}
             onFocus={(e) => {
-              e.currentTarget.style.borderColor = '#38bdf8';
+              e.currentTarget.style.borderColor = 'var(--accent)';
             }}
             onBlur={(e) => {
-              e.currentTarget.style.borderColor = '#262626';
+              e.currentTarget.style.borderColor = 'var(--input-border)';
             }}
           />
           <Search 
@@ -348,7 +337,7 @@ export default function ManageProducts() {
               left: '14px',
               top: '50%',
               transform: 'translateY(-50%)',
-              color: '#666666'
+              color: 'var(--text-muted)'
             }}
           />
           {searchTerm && (
@@ -361,7 +350,7 @@ export default function ManageProducts() {
                 transform: 'translateY(-50%)',
                 backgroundColor: 'transparent',
                 border: 'none',
-                color: '#666666',
+                color: 'var(--text-muted)',
                 cursor: 'pointer',
                 fontSize: '14px',
                 padding: '4px 8px'
@@ -372,29 +361,27 @@ export default function ManageProducts() {
           )}
         </div>
 
-        {/* Product Count */}
         <div style={{
-          color: '#888888',
+          color: 'var(--text-secondary)',
           fontSize: '13px',
           marginBottom: '16px'
         }}>
           {filteredProducts.length} {filteredProducts.length === 1 ? t('Product') : t('Products')} {t('Found')}
         </div>
 
-        {/* Products Grid */}
         {filteredProducts.length === 0 ? (
           <div style={{
-            backgroundColor: '#121212',
-            border: '1px solid #262626',
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--card-border)',
             borderRadius: '12px',
             padding: '60px 20px',
             textAlign: 'center'
           }}>
-            <Package size={48} style={{ color: '#444444', marginBottom: '16px' }} />
-            <h3 style={{ color: '#ffffff', fontSize: '18px', fontWeight: '600', margin: '0 0 8px 0' }}>
+            <Package size={48} style={{ color: 'var(--text-muted)', marginBottom: '16px' }} />
+            <h3 style={{ color: 'var(--foreground)', fontSize: '18px', fontWeight: '600', margin: '0 0 8px 0' }}>
               {searchTerm ? t('No Match') : t('No Products')}
             </h3>
-            <p style={{ color: '#888888', fontSize: '14px', margin: '0 0 16px 0' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 16px 0' }}>
               {searchTerm ? t('Adjust Search') : t('Start Adding')}
             </p>
             {!searchTerm && (
@@ -405,7 +392,7 @@ export default function ManageProducts() {
                   alignItems: 'center',
                   gap: '8px',
                   padding: '10px 20px',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: 'var(--accent)',
                   color: '#000000',
                   borderRadius: '10px',
                   textDecoration: 'none',
@@ -428,8 +415,8 @@ export default function ManageProducts() {
               <div
                 key={product.id}
                 style={{
-                  backgroundColor: '#121212',
-                  border: editingId === product.id ? '2px solid #38bdf8' : '1px solid #262626',
+                  backgroundColor: 'var(--card-background)',
+                  border: editingId === product.id ? '2px solid var(--accent)' : '1px solid var(--card-border)',
                   borderRadius: '12px',
                   padding: '16px',
                   display: 'flex',
@@ -438,7 +425,6 @@ export default function ManageProducts() {
                   transition: 'border-color 0.2s'
                 }}
               >
-                {/* Product Image */}
                 <img
                   src={product.image || 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?q=80&w=600&h=800&auto=format&fit=crop'}
                   alt={product.title || 'Product'}
@@ -454,10 +440,8 @@ export default function ManageProducts() {
                   }}
                 />
 
-                {/* Product Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {editingId === product.id ? (
-                    // Edit Mode
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <input
                         type="text"
@@ -466,10 +450,10 @@ export default function ManageProducts() {
                         placeholder={t('Product Name')}
                         style={{
                           padding: '6px 10px',
-                          backgroundColor: '#1a1a1a',
-                          border: '1px solid #262626',
+                          backgroundColor: 'var(--input-background)',
+                          border: '1px solid var(--input-border)',
                           borderRadius: '6px',
-                          color: '#ffffff',
+                          color: 'var(--foreground)',
                           fontSize: '14px',
                           outline: 'none'
                         }}
@@ -482,10 +466,10 @@ export default function ManageProducts() {
                           placeholder={t('Price')}
                           style={{
                             padding: '6px 10px',
-                            backgroundColor: '#1a1a1a',
-                            border: '1px solid #262626',
+                            backgroundColor: 'var(--input-background)',
+                            border: '1px solid var(--input-border)',
                             borderRadius: '6px',
-                            color: '#ffffff',
+                            color: 'var(--foreground)',
                             fontSize: '13px',
                             outline: 'none',
                             flex: 1,
@@ -499,10 +483,10 @@ export default function ManageProducts() {
                           placeholder={t('Brand')}
                           style={{
                             padding: '6px 10px',
-                            backgroundColor: '#1a1a1a',
-                            border: '1px solid #262626',
+                            backgroundColor: 'var(--input-background)',
+                            border: '1px solid var(--input-border)',
                             borderRadius: '6px',
-                            color: '#ffffff',
+                            color: 'var(--foreground)',
                             fontSize: '13px',
                             outline: 'none',
                             flex: 1,
@@ -518,10 +502,10 @@ export default function ManageProducts() {
                           placeholder={t('Category')}
                           style={{
                             padding: '6px 10px',
-                            backgroundColor: '#1a1a1a',
-                            border: '1px solid #262626',
+                            backgroundColor: 'var(--input-background)',
+                            border: '1px solid var(--input-border)',
                             borderRadius: '6px',
-                            color: '#ffffff',
+                            color: 'var(--foreground)',
                             fontSize: '13px',
                             outline: 'none',
                             flex: 1,
@@ -540,10 +524,10 @@ export default function ManageProducts() {
                           placeholder={t('Stock')}
                           style={{
                             padding: '6px 10px',
-                            backgroundColor: '#1a1a1a',
-                            border: '1px solid #262626',
+                            backgroundColor: 'var(--input-background)',
+                            border: '1px solid var(--input-border)',
                             borderRadius: '6px',
-                            color: '#ffffff',
+                            color: 'var(--foreground)',
                             fontSize: '13px',
                             outline: 'none',
                             flex: 1,
@@ -559,10 +543,10 @@ export default function ManageProducts() {
                           placeholder={t('Discount')}
                           style={{
                             padding: '6px 10px',
-                            backgroundColor: '#1a1a1a',
-                            border: '1px solid #262626',
+                            backgroundColor: 'var(--input-background)',
+                            border: '1px solid var(--input-border)',
                             borderRadius: '6px',
-                            color: '#ffffff',
+                            color: 'var(--foreground)',
                             fontSize: '13px',
                             outline: 'none',
                             flex: 1,
@@ -576,10 +560,10 @@ export default function ManageProducts() {
                           placeholder={t('Image URL')}
                           style={{
                             padding: '6px 10px',
-                            backgroundColor: '#1a1a1a',
-                            border: '1px solid #262626',
+                            backgroundColor: 'var(--input-background)',
+                            border: '1px solid var(--input-border)',
                             borderRadius: '6px',
-                            color: '#ffffff',
+                            color: 'var(--foreground)',
                             fontSize: '13px',
                             outline: 'none',
                             flex: 2,
@@ -592,7 +576,7 @@ export default function ManageProducts() {
                           onClick={() => handleSaveEdit(product.id)}
                           style={{
                             padding: '6px 16px',
-                            backgroundColor: '#22c55e',
+                            backgroundColor: 'var(--success)',
                             color: '#000000',
                             border: 'none',
                             borderRadius: '6px',
@@ -611,8 +595,8 @@ export default function ManageProducts() {
                           style={{
                             padding: '6px 16px',
                             backgroundColor: 'transparent',
-                            border: '1px solid #444444',
-                            color: '#888888',
+                            border: '1px solid var(--card-border)',
+                            color: 'var(--text-secondary)',
                             borderRadius: '6px',
                             fontWeight: '600',
                             fontSize: '12px',
@@ -624,25 +608,23 @@ export default function ManageProducts() {
                       </div>
                     </div>
                   ) : (
-                    // View Mode
                     <>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
                           <h4 style={{ 
-                            color: '#ffffff', 
+                            color: 'var(--foreground)', 
                             fontSize: '16px', 
                             fontWeight: '600', 
                             margin: '0 0 4px 0' 
                           }}>
                             {product.title || t('Untitled')}
                           </h4>
-                          <p style={{ color: '#38bdf8', fontSize: '18px', fontWeight: '700', margin: '0 0 2px 0' }}>
+                          <p style={{ color: 'var(--accent)', fontSize: '18px', fontWeight: '700', margin: '0 0 2px 0' }}>
                             {product.price || 'N/A'}
                           </p>
                           
-                          {/* Stock Display */}
                           <p style={{ 
-                            color: (product.stock || 0) > 0 ? '#22c55e' : '#ef4444', 
+                            color: (product.stock || 0) > 0 ? 'var(--success)' : 'var(--error)', 
                             fontSize: '13px', 
                             fontWeight: '600', 
                             margin: '0 0 4px 0' 
@@ -652,18 +634,18 @@ export default function ManageProducts() {
                           
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             <span style={{ 
-                              color: '#888888', 
+                              color: 'var(--text-secondary)', 
                               fontSize: '12px',
-                              backgroundColor: '#1a1a1a',
+                              backgroundColor: 'var(--hover-background)',
                               padding: '2px 8px',
                               borderRadius: '4px'
                             }}>
                               {product.category || t('Uncategorized')}
                             </span>
                             <span style={{ 
-                              color: '#888888', 
+                              color: 'var(--text-secondary)', 
                               fontSize: '12px',
-                              backgroundColor: '#1a1a1a',
+                              backgroundColor: 'var(--hover-background)',
                               padding: '2px 8px',
                               borderRadius: '4px'
                             }}>
@@ -671,9 +653,9 @@ export default function ManageProducts() {
                             </span>
                             {product.discount && product.discount !== 'New' && (
                               <span style={{ 
-                                color: '#22c55e', 
+                                color: 'var(--success)', 
                                 fontSize: '12px',
-                                backgroundColor: '#1a2a1a',
+                                backgroundColor: 'var(--card-background)',
                                 padding: '2px 8px',
                                 borderRadius: '4px'
                               }}>
@@ -688,9 +670,9 @@ export default function ManageProducts() {
                           onClick={() => startEditing(product)}
                           style={{
                             padding: '6px 12px',
-                            backgroundColor: '#1a1a1a',
-                            border: '1px solid #262626',
-                            color: '#38bdf8',
+                            backgroundColor: 'var(--hover-background)',
+                            border: '1px solid var(--card-border)',
+                            color: 'var(--accent)',
                             borderRadius: '6px',
                             fontSize: '12px',
                             cursor: 'pointer',
@@ -705,9 +687,9 @@ export default function ManageProducts() {
                           onClick={() => handleDelete(product.id, product.title || t('Untitled'))}
                           style={{
                             padding: '6px 12px',
-                            backgroundColor: '#1a1a1a',
-                            border: '1px solid #262626',
-                            color: '#ef4444',
+                            backgroundColor: 'var(--hover-background)',
+                            border: '1px solid var(--card-border)',
+                            color: 'var(--error)',
                             borderRadius: '6px',
                             fontSize: '12px',
                             cursor: 'pointer',

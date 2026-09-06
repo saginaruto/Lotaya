@@ -60,7 +60,6 @@ export default function ProfilePage() {
   const handleImageUpload = async (file: File) => {
     if (!file || !user) return;
 
-    // ပုံအရွယ်အစားစစ်ပါ (Max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Image size must be less than 5MB');
       return;
@@ -84,7 +83,6 @@ export default function ProfilePage() {
       alert(t('Upload Error'));
     } finally {
       setUploading(false);
-      // Reset file inputs
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
@@ -136,11 +134,11 @@ export default function ProfilePage() {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#000000', 
+        backgroundColor: 'var(--background)', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        color: '#ffffff'
+        color: 'var(--foreground)'
       }}>
         {t('common.loading')}
       </div>
@@ -151,11 +149,11 @@ export default function ProfilePage() {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#000000', 
+        backgroundColor: 'var(--background)', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        color: '#ffffff'
+        color: 'var(--foreground)'
       }}>
         {t('User Not Found')}
       </div>
@@ -163,15 +161,15 @@ export default function ProfilePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '20px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)', padding: '20px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <Link href="/" style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+        <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
           <ArrowLeft size={20} />
         </Link>
 
         <div style={{
-          backgroundColor: '#121212',
-          border: '1px solid #262626',
+          backgroundColor: 'var(--card-background)',
+          border: '1px solid var(--card-border)',
           borderRadius: '16px',
           padding: '32px'
         }}>
@@ -190,14 +188,14 @@ export default function ProfilePage() {
                   width: '100px',
                   height: '100px',
                   borderRadius: '50%',
-                  backgroundColor: '#1e1e1e',
+                  backgroundColor: 'var(--hover-background)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '40px',
                   fontWeight: '700',
-                  color: '#ffffff',
-                  border: `3px solid ${userData.role === 'seller' ? '#FFD700' : '#38bdf8'}`,
+                  color: 'var(--foreground)',
+                  border: `3px solid ${userData.role === 'seller' ? '#FFD700' : 'var(--accent)'}`,
                   overflow: 'hidden'
                 }}
               >
@@ -227,8 +225,8 @@ export default function ProfilePage() {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   style={{
-                    backgroundColor: '#1e1e1e',
-                    border: '2px solid #121212',
+                    backgroundColor: 'var(--card-background)',
+                    border: '2px solid var(--card-border)',
                     borderRadius: '50%',
                     width: '32px',
                     height: '32px',
@@ -236,7 +234,7 @@ export default function ProfilePage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: uploading ? 'default' : 'pointer',
-                    color: '#888888',
+                    color: 'var(--text-secondary)',
                     transition: 'all 0.2s'
                   }}
                 >
@@ -248,8 +246,8 @@ export default function ProfilePage() {
                   onClick={() => cameraInputRef.current?.click()}
                   disabled={uploading}
                   style={{
-                    backgroundColor: '#1e1e1e',
-                    border: '2px solid #121212',
+                    backgroundColor: 'var(--card-background)',
+                    border: '2px solid var(--card-border)',
                     borderRadius: '50%',
                     width: '32px',
                     height: '32px',
@@ -257,7 +255,7 @@ export default function ProfilePage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: uploading ? 'default' : 'pointer',
-                    color: '#888888',
+                    color: 'var(--text-secondary)',
                     transition: 'all 0.2s'
                   }}
                 >
@@ -288,11 +286,11 @@ export default function ProfilePage() {
             </div>
 
             <div style={{ textAlign: 'center' }}>
-              <h1 style={{ color: '#ffffff', fontSize: '28px', fontWeight: '700', margin: 0 }}>
+              <h1 style={{ color: 'var(--foreground)', fontSize: '28px', fontWeight: '700', margin: 0 }}>
                 {userData.username || t('User')}
               </h1>
               <span style={{
-                color: userData.role === 'seller' ? '#FFD700' : '#38bdf8',
+                color: userData.role === 'seller' ? '#FFD700' : 'var(--accent)',
                 fontSize: '16px',
                 fontWeight: '500'
               }}>
@@ -302,12 +300,12 @@ export default function ProfilePage() {
           </div>
 
           {/* Profile Details */}
-          <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '20px' }}>            
+          <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '20px' }}>            
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
               <span style={{ fontSize: '18px' }}>💼</span>
               <div>
-                <div style={{ color: '#888888', fontSize: '12px' }}>{t('Role')}</div>
-                <div style={{ color: '#ffffff', fontSize: '16px' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t('Role')}</div>
+                <div style={{ color: 'var(--foreground)', fontSize: '16px' }}>
                   {userData.role === 'seller' ? t('Seller') : t('Buyer')}
                 </div>
               </div>
@@ -316,21 +314,21 @@ export default function ProfilePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '18px' }}>📅</span>
               <div>
-                <div style={{ color: '#888888', fontSize: '12px' }}>{t('Member Since')}</div>
-                <div style={{ color: '#ffffff', fontSize: '16px' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t('Member Since')}</div>
+                <div style={{ color: 'var(--foreground)', fontSize: '16px' }}>
                   {userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
                 </div>
               </div>
             </div>
           </div>
           
-          <div style={{ marginTop: '24px', borderTop: '1px solid #1a1a1a', paddingTop: '20px' }}>
+          <div style={{ marginTop: '24px', borderTop: '1px solid var(--card-border)', paddingTop: '20px' }}>
             <button
               onClick={() => router.push('/')}
               style={{
                 width: '100%',
                 padding: '12px',
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--accent)',
                 color: '#000000',
                 border: 'none',
                 borderRadius: '8px',

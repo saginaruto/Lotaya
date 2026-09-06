@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/components/LanguageProvider';
 import NotificationToggle from '@/components/NotificationToggle';
+import ThemeToggle from '@/components/ThemeToggle';
 import { 
   ArrowLeft, 
   User, 
@@ -23,7 +24,7 @@ import {
 } from 'lucide-react';
 
 interface UserData {
-  displayName?: string;  // 🔥 Username နဲ့ Shop Name ပေါင်းထားတယ်
+  displayName?: string;
   shopAddress?: string;
   phone?: string;
   dateOfBirth?: string;
@@ -32,7 +33,7 @@ interface UserData {
   shopDescription?: string;
   email?: string;  
   role?: string;
-  lastDisplayNameChange?: string;  // 🔥 အသစ်
+  lastDisplayNameChange?: string;
   lastPhoneChange?: string;
   lastShopAddressChange?: string;
   language?: string;
@@ -51,47 +52,47 @@ const SettingsField = ({ label, field, value, onChange, placeholder, type = 'tex
   return (
     <div style={{ marginBottom: '12px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
-        <label style={{ color: '#888888', fontSize: '11px', fontWeight: '500' }}>{label} {required && '*'}</label>
+        <label style={{ color: 'var(--text-secondary)', fontSize: '11px', fontWeight: '500' }}>{label} {required && '*'}</label>
         {!noRestriction && !canChangeField && nextDate && <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontSize: '10px', fontWeight: '500' }}><Clock size={12} /><span>{translate('availableOn')} {formatDate(nextDate)}</span></div>}
       </div>
       {rows ? (
         <textarea 
           value={value} 
-          onChange={(event) => onChange(event.target.value)}  // ✅ ဒီမှာ event.target.value ကို ပို့ပါ
+          onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder} 
           rows={rows} 
           disabled={disabled || !canChangeField} 
-          style={{ width: '100%', padding: '8px 12px', backgroundColor: canChangeField ? '#1a1a1a' : '#0a0a0a', border: canChangeField ? '1px solid #262626' : '1px solid #333333', borderRadius: '6px', color: canChangeField ? '#ffffff' : '#666666', fontSize: '13px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', cursor: canChangeField ? 'text' : 'not-allowed' }} 
+          style={{ width: '100%', padding: '8px 12px', backgroundColor: canChangeField ? 'var(--input-background)' : 'var(--card-background)', border: canChangeField ? '1px solid var(--input-border)' : '1px solid var(--card-border)', borderRadius: '6px', color: canChangeField ? 'var(--foreground)' : 'var(--text-muted)', fontSize: '13px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', cursor: canChangeField ? 'text' : 'not-allowed' }} 
         />
       ) : (
         <input 
           type={type} 
           value={value} 
-          onChange={(event) => onChange(event.target.value)}  // ✅ ဒီမှာ event.target.value ကို ပို့ပါ
+          onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder} 
           disabled={disabled || !canChangeField} 
-          style={{ width: '100%', padding: '8px 12px', backgroundColor: canChangeField ? '#1a1a1a' : '#0a0a0a', border: canChangeField ? '1px solid #262626' : '1px solid #333333', borderRadius: '6px', color: canChangeField ? '#ffffff' : '#666666', fontSize: '13px', outline: 'none', boxSizing: 'border-box', cursor: canChangeField ? 'text' : 'not-allowed' }} 
+          style={{ width: '100%', padding: '8px 12px', backgroundColor: canChangeField ? 'var(--input-background)' : 'var(--card-background)', border: canChangeField ? '1px solid var(--input-border)' : '1px solid var(--card-border)', borderRadius: '6px', color: canChangeField ? 'var(--foreground)' : 'var(--text-muted)', fontSize: '13px', outline: 'none', boxSizing: 'border-box', cursor: canChangeField ? 'text' : 'not-allowed' }} 
         />
       )}
-      {!noRestriction && !canChangeField && <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#888888', fontSize: '10px', marginTop: '3px' }}><AlertCircle size={12} /><span>{translate('thirtyDayRule')}</span></div>}
-      {canChangeField && !noRestriction && <div style={{ color: '#22c55e', fontSize: '10px', marginTop: '3px' }}>✓ {translate('availableNow')}</div>}
-      {noRestriction && <div style={{ color: '#22c55e', fontSize: '10px', marginTop: '3px' }}>✓ {translate('alwaysAvailable')}</div>}
+      {!noRestriction && !canChangeField && <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '10px', marginTop: '3px' }}><AlertCircle size={12} /><span>{translate('thirtyDayRule')}</span></div>}
+      {canChangeField && !noRestriction && <div style={{ color: 'var(--success)', fontSize: '10px', marginTop: '3px' }}>✓ {translate('availableNow')}</div>}
+      {noRestriction && <div style={{ color: 'var(--success)', fontSize: '10px', marginTop: '3px' }}>✓ {translate('alwaysAvailable')}</div>}
     </div>
   );
 };
 
 const AccordionSection = ({ title, icon: Icon, children, isOpen, onToggle }: any) => (
-  <div style={{ border: '1px solid #262626', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#121212' }}>
+  <div style={{ border: '1px solid var(--card-border)', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--card-background)' }}>
     <button
       onClick={onToggle}
-      style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 14px', backgroundColor: isOpen ? '#1a1a1a' : 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', fontWeight: isOpen ? '600' : '500', cursor: 'pointer', transition: 'background 0.2s' }}
-      onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = '#1a1a1a'; }}
+      style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '10px 14px', backgroundColor: isOpen ? 'var(--hover-background)' : 'transparent', border: 'none', color: 'var(--foreground)', fontSize: '13px', fontWeight: isOpen ? '600' : '500', cursor: 'pointer', transition: 'background 0.2s' }}
+      onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = 'var(--hover-background)'; }}
       onMouseLeave={(event) => { if (!isOpen) event.currentTarget.style.backgroundColor = 'transparent'; }}
     >
-      <Icon size={16} color="#38bdf8" />
+      <Icon size={16} color="var(--accent)" />
       <span>{title}</span>
     </button>
-    {isOpen && <div style={{ padding: '0 14px 14px 14px', borderTop: '1px solid #262626', backgroundColor: '#0d0d0d' }}>{children}</div>}
+    {isOpen && <div style={{ padding: '0 14px 14px 14px', borderTop: '1px solid var(--card-border)', backgroundColor: 'var(--background)' }}>{children}</div>}
   </div>
 );
 
@@ -107,9 +108,8 @@ export default function SellerSettings() {
   
   const [openSection, setOpenSection] = useState<'profile' | 'preferences' | null>(null);
 
-  // 🔥 formData ကို ပြင်ပါ (displayName ပဲကျန်မယ်)
   const [formData, setFormData] = useState({
-    displayName: '',  // 🔥 Username နဲ့ Shop Name ပေါင်းထားတယ်
+    displayName: '',
     shopAddress: '',
     phone: '',
     dateOfBirth: '',
@@ -125,15 +125,14 @@ export default function SellerSettings() {
     promotions: false
   });
 
-  // 🔥 canChange ကို ပြင်ပါ
   const [canChange, setCanChange] = useState({
-    displayName: true,  // 🔥 အသစ်
+    displayName: true,
     phone: true,
     shopAddress: true
   });
 
   const [nextChangeDate, setNextChangeDate] = useState({
-    displayName: null as string | null,  // 🔥 အသစ်
+    displayName: null as string | null,
     phone: null as string | null,
     shopAddress: null as string | null
   });
@@ -150,7 +149,6 @@ export default function SellerSettings() {
             const data = snapshot.data();
             setUserData(data);
             
-            // 🔥 displayName ကို ယူမယ် (မရှိရင် username သို့ shopName ကနေယူမယ်)
             const displayName = data.displayName || data.username || data.shopName || '';
             
             setFormData({
@@ -170,7 +168,6 @@ export default function SellerSettings() {
               promotions: data.notifications?.promotions ?? false
             });
 
-            // 🔥 lastDisplayNameChange ကိုစစ်ပါ
             checkCanChange('displayName', data.lastDisplayNameChange);
             checkCanChange('phone', data.lastPhoneChange);
             checkCanChange('shopAddress', data.lastShopAddressChange);        
@@ -180,7 +177,7 @@ export default function SellerSettings() {
             }
           } else {
             const newUserData = {
-              displayName: user.displayName || user.email?.split('@')[0] || 'User',  // 🔥 displayName
+              displayName: user.displayName || user.email?.split('@')[0] || 'User',
               shopAddress: '',
               phone: '',
               dateOfBirth: '',
@@ -231,7 +228,6 @@ export default function SellerSettings() {
   }, [router]);
 
   const checkCanChange = (field: keyof typeof canChange, lastChangeDate?: string) => {
-    
     if (!lastChangeDate) {
       setCanChange(prev => ({ ...prev, [field]: true }));
       setNextChangeDate(prev => ({ ...prev, [field]: null }));
@@ -295,8 +291,6 @@ export default function SellerSettings() {
       updateData.closingHours = formData.closingHours;
       updateData.shopDescription = formData.shopDescription.trim();
 
-      
-      // 🔥 displayName ကိုပဲ စစ်ပါ
       const fields = [
         { key: 'displayName', value: formData.displayName, dbField: 'lastDisplayNameChange', label: 'Display Name' },
         { key: 'phone', value: formData.phone, dbField: 'lastPhoneChange', label: 'Phone' },
@@ -359,11 +353,11 @@ export default function SellerSettings() {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#000000', 
+        backgroundColor: 'var(--background)', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        color: '#ffffff'
+        color: 'var(--foreground)'
       }}>
         {t('loading')}
       </div>
@@ -374,24 +368,24 @@ export default function SellerSettings() {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#000000', 
+        backgroundColor: 'var(--background)', 
         display: 'flex', 
         flexDirection: 'column',
         alignItems: 'center', 
         justifyContent: 'center',
-        color: '#ffffff',
+        color: 'var(--foreground)',
         gap: '16px',
         padding: '20px'
       }}>
-        <div style={{ color: '#ef4444', fontSize: '20px' }}>⚠️ Error</div>
-        <div style={{ color: '#888888', fontSize: '14px', textAlign: 'center' }}>
+        <div style={{ color: 'var(--error)', fontSize: '20px' }}>⚠️ Error</div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center' }}>
           {error}
         </div>
         <button
           onClick={() => window.location.reload()}
           style={{
             padding: '10px 24px',
-            backgroundColor: '#38bdf8',
+            backgroundColor: 'var(--accent)',
             color: '#000000',
             border: 'none',
             borderRadius: '8px',
@@ -406,7 +400,7 @@ export default function SellerSettings() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '16px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)', padding: '16px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <div style={{ 
           display: 'flex', 
@@ -419,24 +413,27 @@ export default function SellerSettings() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Link 
               href="/" 
-              style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+              style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
             >
               <ArrowLeft size={18} />
             </Link>
-            <h1 style={{ color: '#ffffff', fontSize: '18px', fontWeight: '700', margin: 0 }}>
+            <h1 style={{ color: 'var(--foreground)', fontSize: '18px', fontWeight: '700', margin: 0 }}>
               {language === 'my' ? 'ဆက်တင်များ' : 'Settings'}
             </h1>
+          </div>
+          <div style={{ padding: '12px 16px' }}>
+            <ThemeToggle />
           </div>
         </div>
 
         {success && (
           <div style={{
-            backgroundColor: '#1a2a1a',
-            border: '1px solid #22c55e',
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--success)',
             borderRadius: '6px',
             padding: '10px 14px',
             marginBottom: '12px',
-            color: '#22c55e',
+            color: 'var(--success)',
             fontSize: '13px',
             display: 'flex',
             alignItems: 'center',
@@ -448,12 +445,12 @@ export default function SellerSettings() {
         )}
         {error && (
           <div style={{
-            backgroundColor: '#2a1a1a',
-            border: '1px solid #ef4444',
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--error)',
             borderRadius: '6px',
             padding: '10px 14px',
             marginBottom: '12px',
-            color: '#ef4444',
+            color: 'var(--error)',
             fontSize: '13px',
             display: 'flex',
             alignItems: 'center',
@@ -475,11 +472,6 @@ export default function SellerSettings() {
             onToggle={() => setOpenSection(openSection === 'profile' ? null : 'profile')}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingTop: '12px' }}>
-              {/* ❌ Profile Picture ကိုဖယ်ပါ */}
-              {/* ❌ Display Name ကိုဖယ်ပါ */}
-
-              {/* ✅ အောက်က Field တွေကို အပေါ်တင်ပါ */}
-
               <SettingsField
                 label={language === 'my' ? 'ပြသမည့်အမည်' : 'Display Name'}
                 field="displayName"
@@ -493,7 +485,7 @@ export default function SellerSettings() {
               />
 
               <div style={{ marginBottom: '12px' }}>
-                <label style={{ color: '#888888', fontSize: '11px', fontWeight: '500', display: 'block', marginBottom: '3px' }}>
+                <label style={{ color: 'var(--text-secondary)', fontSize: '11px', fontWeight: '500', display: 'block', marginBottom: '3px' }}>
                   {language === 'my' ? 'အီးမေးလ်' : 'Email'}
                 </label>
                 <input
@@ -503,10 +495,10 @@ export default function SellerSettings() {
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #262626',
+                    backgroundColor: 'var(--card-background)',
+                    border: '1px solid var(--card-border)',
                     borderRadius: '6px',
-                    color: '#666666',
+                    color: 'var(--text-muted)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -595,12 +587,12 @@ export default function SellerSettings() {
               {/* Notifications Section */}
               <div style={{
                 padding: '12px 16px',
-                backgroundColor: '#1a1a1a',
+                backgroundColor: 'var(--card-background)',
                 borderRadius: '8px',
-                border: '1px solid #262626'
+                border: '1px solid var(--card-border)'
               }}>
                 <div style={{ marginBottom: '10px' }}>
-                  <div style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500' }}>
+                  <div style={{ color: 'var(--foreground)', fontSize: '13px', fontWeight: '500' }}>
                     <Bell size={14} style={{ display: 'inline', marginRight: '6px' }} />
                     {language === 'my' ? 'အကြောင်းကြားချက်များ' : 'Notifications'}
                   </div>
@@ -642,22 +634,22 @@ export default function SellerSettings() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '12px 16px',
-                backgroundColor: '#1a1a1a',
+                backgroundColor: 'var(--card-background)',
                 borderRadius: '8px',
-                border: '1px solid #262626'
+                border: '1px solid var(--card-border)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Shield size={16} color="#888888" />
+                  <Shield size={16} color="var(--text-secondary)" />
                   <div>
-                    <div style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500' }}>
+                    <div style={{ color: 'var(--foreground)', fontSize: '13px', fontWeight: '500' }}>
                       {language === 'my' ? 'အကောင့်အမျိုးအစား' : 'Account Type'}
                     </div>
-                    <div style={{ color: '#888888', fontSize: '11px' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>
                       {userData?.role === 'seller' ? (language === 'my' ? 'ရောင်းချသူ' : 'Seller') : (language === 'my' ? 'ဝယ်ယူသူ' : 'Buyer')}
                     </div>
                   </div>
                 </div>
-                <div style={{ color: '#38bdf8', fontSize: '12px' }}>
+                <div style={{ color: 'var(--accent)', fontSize: '12px' }}>
                   {userData?.role === 'seller' ? 'Pro' : 'Basic'}
                 </div>
               </div>
@@ -672,7 +664,7 @@ export default function SellerSettings() {
             style={{
               width: '100%',
               padding: '10px',
-              backgroundColor: '#38bdf8',
+              backgroundColor: 'var(--accent)',
               color: '#000000',
               border: 'none',
               borderRadius: '8px',

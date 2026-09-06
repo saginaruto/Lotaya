@@ -1,3 +1,4 @@
+// src/components/LocationModal.tsx
 'use client';
 
 import { MapPin, X, Search, Check } from "lucide-react";
@@ -44,8 +45,8 @@ export default function LocationModal({
     >
       <div 
         style={{
-          backgroundColor: "#121212",
-          border: "1px solid #262626",
+          backgroundColor: "var(--card-background)",
+          border: "1px solid var(--card-border)",
           borderRadius: "16px",
           width: "100%",
           maxWidth: "400px",
@@ -59,16 +60,16 @@ export default function LocationModal({
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <MapPin size={18} style={{ color: "#ef4444" }} />
-            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#ffffff" }}>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "var(--foreground)" }}>
               {t('Select Location')} ({uniqueLocations.length})
             </h3>
           </div>
           <button 
             onClick={() => setIsLocationModalOpen(false)}
             style={{
-              backgroundColor: "#1e1e1e",
+              backgroundColor: "var(--hover-background)",
               border: "none",
-              color: "#ffffff",
+              color: "var(--foreground)",
               borderRadius: "50%",
               width: "28px",
               height: "28px",
@@ -86,13 +87,13 @@ export default function LocationModal({
           style={{ 
             display: "flex", 
             alignItems: "center", 
-            backgroundColor: "#1e1e1e", 
-            border: "1px solid #333333",
+            backgroundColor: "var(--input-background)", 
+            border: "1px solid var(--input-border)",
             borderRadius: "10px",
             padding: "8px 12px"
           }}
         >
-          <Search size={14} style={{ color: "#737373", marginRight: "8px" }} />
+          <Search size={14} style={{ color: "var(--text-muted)", marginRight: "8px" }} />
           <input 
             type="text" 
             placeholder={t('Search Placeholder')}
@@ -102,7 +103,7 @@ export default function LocationModal({
               backgroundColor: "transparent", 
               border: "none", 
               outline: "none", 
-              color: "#ffffff", 
+              color: "var(--foreground)", 
               fontSize: "13px",
               width: "100%"
             }}
@@ -120,12 +121,11 @@ export default function LocationModal({
         >
           {filteredLocations.length > 0 ? (
             <>
-              {/* "All" ကို ပထမဆုံးနေရာမှာ ထည့်ပါ */}
               <button
                 key="all"
                 onClick={() => {
                   setSelectedLocation("All");
-                  setLocationSearch(''); // ✅ ဒီနေရာမှာ ရှင်းလင်းပါ
+                  setLocationSearch('');
                   setIsLocationModalOpen(false);
                 }}
                 style={{
@@ -133,10 +133,10 @@ export default function LocationModal({
                   alignItems: "center",
                   justifyContent: "space-between",
                   padding: "10px 12px",
-                  backgroundColor: selectedLocation === "All" ? "#222222" : "transparent",
+                  backgroundColor: selectedLocation === "All" ? "var(--hover-background)" : "transparent",
                   border: "0px",
                   borderRadius: "8px",
-                  color: selectedLocation === "All" ? "#ffffff" : "#FFD700",
+                  color: selectedLocation === "All" ? "var(--foreground)" : "#FFD700",
                   fontSize: "14px",
                   cursor: "pointer",
                   textAlign: "left",
@@ -148,10 +148,9 @@ export default function LocationModal({
                 }}>
                   {t('All Locations')}
                 </span>
-                {selectedLocation === "All" && <Check size={16} style={{ color: "#22c55e" }} />}
+                {selectedLocation === "All" && <Check size={16} style={{ color: "var(--success)" }} />}
               </button>
 
-              {/* ကျန်တဲ့မြို့တွေ */}
               {filteredLocations.map((location) => {
                 const isSelected = selectedLocation === location;
                 const translatedName = translateCity(location, language);
@@ -160,7 +159,7 @@ export default function LocationModal({
                     key={location}
                     onClick={() => {
                       setSelectedLocation(location);
-                      setLocationSearch(''); // ✅ ဒီနေရာမှာ ရှင်းလင်းပါ
+                      setLocationSearch('');
                       setIsLocationModalOpen(false);
                     }}
                     style={{
@@ -168,10 +167,10 @@ export default function LocationModal({
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "10px 12px",
-                      backgroundColor: isSelected ? "#222222" : "transparent",
+                      backgroundColor: isSelected ? "var(--hover-background)" : "transparent",
                       border: "0px",
                       borderRadius: "8px",
-                      color: isSelected ? "#ffffff" : "#aaaaaa",
+                      color: isSelected ? "var(--foreground)" : "var(--text-secondary)",
                       fontSize: "14px",
                       cursor: "pointer",
                       textAlign: "left",
@@ -179,13 +178,13 @@ export default function LocationModal({
                     }}
                   >
                     <span>{translatedName}</span>
-                    {isSelected && <Check size={16} style={{ color: "#22c55e" }} />}
+                    {isSelected && <Check size={16} style={{ color: "var(--success)" }} />}
                   </button>
                 );
               })}
             </>
           ) : (
-            <div style={{ textAlign: "center", color: "#666666", padding: "16px 0", fontSize: "13px" }}>
+            <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "16px 0", fontSize: "13px" }}>
               {t('location.noResults')}
             </div>
           )}

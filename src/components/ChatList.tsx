@@ -1,3 +1,4 @@
+// components/ChatList.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -55,15 +56,11 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
     };
   }, [user]);
 
-  // ✅ ရက်စွဲနဲ့ အချိန် Format လုပ်တဲ့ Function
   const formatChatTime = (timestamp: any): string => {
     if (!timestamp) return '';
     
     try {
-      // Firestore Timestamp ဖြစ်ရင် toDate() သုံး
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      
-      // Invalid Date ဖြစ်မဖြစ်စစ်
       if (isNaN(date.getTime())) return '';
       
       const now = new Date();
@@ -73,22 +70,18 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
       
       const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       
-      // ✅ ဒီနေ့ပို့တာ → အချိန်ပြမယ်
       if (msgDate.getTime() === today.getTime()) {
         return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       }
       
-      // ✅ မနေ့ကပို့တာ → "Yesterday"
       if (msgDate.getTime() === yesterday.getTime()) {
         return 'Yesterday';
       }
       
-      // ✅ ဒီနှစ်ထဲကပို့တာ → လ/ရက်
       if (date.getFullYear() === now.getFullYear()) {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       }
       
-      // ✅ ဟောင်းနေပြီဆိုရင် → လ/ရက်/နှစ်
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       
     } catch (error) {
@@ -117,7 +110,7 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
 
   if (loading) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center', color: '#888888' }}>
+      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
         {t('Loading...')}
       </div>
     );
@@ -125,7 +118,7 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
 
   if (chats.length === 0) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center', color: '#888888' }}>
+      <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>💬</div>
         <p>{t('No messages yet')}</p>
       </div>
@@ -155,20 +148,19 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
               alignItems: 'center',
               gap: '12px',
               padding: '12px 16px',
-              backgroundColor: hasUnread ? '#1a1a2e' : '#121212',
+              backgroundColor: hasUnread ? 'var(--card-background)' : 'var(--background)',
               borderRadius: '12px',
-              border: hasUnread ? '2px solid #38bdf8' : '1px solid #262626',
+              border: hasUnread ? '2px solid var(--accent)' : '1px solid var(--card-border)',
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = hasUnread ? '#1e1e3a' : '#1a1a1a';
+              e.currentTarget.style.backgroundColor = 'var(--hover-background)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = hasUnread ? '#1a1a2e' : '#121212';
+              e.currentTarget.style.backgroundColor = hasUnread ? 'var(--card-background)' : 'var(--background)';
             }}
           >
-            {/* Profile Picture */}
             <div style={{ position: 'relative', flexShrink: 0 }}>
               {displayPhoto ? (
                 <img
@@ -179,7 +171,7 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
                     height: '48px',
                     borderRadius: '50%',
                     objectFit: 'cover',
-                    border: hasUnread ? '2px solid #38bdf8' : '2px solid #262626'
+                    border: hasUnread ? '2px solid var(--accent)' : '2px solid var(--card-border)'
                   }}
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=38bdf8&color=ffffff&size=48';
@@ -191,28 +183,27 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
                     width: '48px',
                     height: '48px',
                     borderRadius: '50%',
-                    backgroundColor: hasUnread ? '#1a1a3a' : '#1a1a1a',
+                    backgroundColor: hasUnread ? 'var(--card-background)' : 'var(--hover-background)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: hasUnread ? '#38bdf8' : '#ffffff',
+                    color: hasUnread ? 'var(--accent)' : 'var(--foreground)',
                     fontSize: '20px',
                     fontWeight: '600',
-                    border: hasUnread ? '2px solid #38bdf8' : '2px solid #262626'
+                    border: hasUnread ? '2px solid var(--accent)' : '2px solid var(--card-border)'
                   }}
                 >
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
               
-              {/* Unread Badge */}
               {hasUnread && (
                 <div
                   style={{
                     position: 'absolute',
                     top: '-4px',
                     right: '-4px',
-                    backgroundColor: '#38bdf8',
+                    backgroundColor: 'var(--accent)',
                     color: '#000000',
                     fontSize: '10px',
                     fontWeight: '700',
@@ -227,11 +218,10 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
               )}
             </div>
 
-            {/* Chat Info */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ 
-                  color: '#ffffff', 
+                  color: 'var(--foreground)', 
                   fontSize: '14px', 
                   fontWeight: hasUnread ? '700' : '600',
                   whiteSpace: 'nowrap',
@@ -242,10 +232,9 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
                   {displayName}
                 </div>
                 
-                {/* ✅ အချိန်/ရက်စွဲ ပြမယ် */}
                 {timeString && (
                   <div style={{
-                    color: hasUnread ? '#38bdf8' : '#555555',
+                    color: hasUnread ? 'var(--accent)' : 'var(--text-muted)',
                     fontSize: '10px',
                     flexShrink: 0,
                     fontWeight: hasUnread ? '500' : '400'
@@ -256,7 +245,7 @@ export default function ChatList({ onChatSelect }: ChatListProps) {
               </div>
               
               <div style={{ 
-                color: hasUnread ? '#38bdf8' : '#888888',
+                color: hasUnread ? 'var(--accent)' : 'var(--text-secondary)',
                 fontSize: '12px', 
                 marginTop: '2px',
                 whiteSpace: 'nowrap',

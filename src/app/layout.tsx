@@ -7,6 +7,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 import './globals.css';
 import LanguageProvider, { Language } from '@/components/LanguageProvider';
 import ToastNotification from '@/components/ToastNotification';
+import { SessionProvider } from '@/context/SessionContext';
+import { ThemeProvider } from '@/context/ThemeContext';
+import { WishlistProvider } from '@/context/WishlistContext'; // ✅ ထည့်ပါ
 
 export default function RootLayout({
   children,
@@ -16,6 +19,19 @@ export default function RootLayout({
   const [language, setLanguage] = useState<Language>('en');
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ title: string; body: string; senderName?: string } | null>(null);
+
+  // ✅ Theme ကို LocalStorage ကနေ ဖတ်ပြီး apply လုပ်မယ်
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const defaultTheme = prefersDark ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', defaultTheme);
+      localStorage.setItem('theme', defaultTheme);
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -33,7 +49,6 @@ export default function RootLayout({
               const body = payload.notification?.body || payload.data?.body || 'မှာယူမှုအသစ် ရောက်ရှိပါပြီ';
               const senderName = payload.data?.senderName || '';
               
-              // ✅ System Notification
               if (payload.notification) {
                 new Notification(payload.notification.title || 'New Message', {
                   body: payload.notification.body || '',
@@ -41,7 +56,6 @@ export default function RootLayout({
                 });
               }
               
-              // ✅ In-App Toast (App ထဲမှာ Popup ပြမယ်)
               setToast({
                 title: title,
                 body: body,
@@ -61,7 +75,6 @@ export default function RootLayout({
     return () => unsubscribe();
   }, []);
 
-  // ✅ Service Workers
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -109,18 +122,23 @@ export default function RootLayout({
     <html lang="en">
       <head>{headElements}</head>
       <body>
-        <LanguageProvider initialLanguage={language}>
-          {children}
-          {/* ✅ In-App Toast */}
-          {toast && (
-            <ToastNotification
-              message={toast.body}
-              senderName={toast.senderName || toast.title}
-              onClose={() => setToast(null)}
-              duration={5000}
-            />
-          )}
-        </LanguageProvider>
+        <ThemeProvider>
+          <SessionProvider>
+            <WishlistProvider>  {/* ✅ WishlistProvider ထည့်ပါ */}
+              <LanguageProvider initialLanguage={language}>
+                {children}
+                {toast && (
+                  <ToastNotification
+                    message={toast.body}
+                    senderName={toast.senderName || toast.title}
+                    onClose={() => setToast(null)}
+                    duration={5000}
+                  />
+                )}
+              </LanguageProvider>
+            </WishlistProvider>
+          </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

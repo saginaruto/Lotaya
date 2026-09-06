@@ -24,7 +24,6 @@ export default function NotificationToggle({
   const [isEnabled, setIsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Check notification status from Firestore
   useEffect(() => {
     const checkNotificationStatus = async () => {
       const user = auth.currentUser;
@@ -50,13 +49,11 @@ export default function NotificationToggle({
     checkNotificationStatus();
   }, []);
 
-  // ✅ Toggle notification
   const toggleNotification = async () => {
     const user = auth.currentUser;
     if (!user) return;
     
     if (isEnabled) {
-      // Disable notifications - remove token
       try {
         const userRef = doc(db, 'users', user.uid);
         const snapshot = await getDoc(userRef);
@@ -73,7 +70,6 @@ export default function NotificationToggle({
         console.error('Error disabling notifications:', error);
       }
     } else {
-      // Enable notifications
       if (Notification.permission !== 'granted') {
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
@@ -101,11 +97,11 @@ export default function NotificationToggle({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '12px 16px',
-        backgroundColor: '#1a1a1a',
+        backgroundColor: 'var(--card-background)',
         borderRadius: '8px',
-        border: '1px solid #262626',
+        border: '1px solid var(--card-border)',
       }}>
-        <span style={{ color: '#888888', fontSize: '14px' }}>Loading...</span>
+        <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Loading...</span>
       </div>
     );
   }
@@ -118,25 +114,25 @@ export default function NotificationToggle({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '12px 16px',
-        backgroundColor: '#1a1a1a',
+        backgroundColor: 'var(--card-background)',
         borderRadius: '8px',
-        border: '1px solid #262626',
+        border: '1px solid var(--card-border)',
         cursor: 'pointer',
         transition: 'border-color 0.2s'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = '#38bdf8';
+        e.currentTarget.style.borderColor = 'var(--accent)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = '#262626';
+        e.currentTarget.style.borderColor = 'var(--card-border)';
       }}
     >
       <div>
-        <div style={{ color: '#ffffff', fontSize: '13px', fontWeight: '500' }}>
+        <div style={{ color: 'var(--foreground)', fontSize: '13px', fontWeight: '500' }}>
           🔔 {displayLabel}
         </div>
         {displayDescription && (
-          <div style={{ color: '#888888', fontSize: '11px' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>
             {displayDescription}
           </div>
         )}
@@ -145,7 +141,7 @@ export default function NotificationToggle({
         style={{
           width: '44px',
           height: '24px',
-          backgroundColor: isEnabled ? '#38bdf8' : '#333333',
+          backgroundColor: isEnabled ? 'var(--accent)' : 'var(--text-muted)',
           borderRadius: '12px',
           position: 'relative',
           transition: 'background 0.3s ease',

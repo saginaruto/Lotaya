@@ -1,3 +1,4 @@
+// components/Sidebar.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -106,13 +107,12 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
 
   const getRoleColor = () => {
     if (currentRole === 'seller') return '#FFD700';
-    if (currentRole === 'user') return '#38bdf8';
-    return '#888888';
+    if (currentRole === 'user') return 'var(--accent)';
+    return 'var(--text-muted)';
   };
 
   return (
     <>
-      {/* Overlay */}
       <div 
         onClick={() => setIsSidebarOpen(false)}
         style={{
@@ -126,7 +126,6 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
         }}
       />
 
-      {/* Sidebar */}
       <aside 
         style={{
           position: "fixed",
@@ -135,8 +134,8 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
           bottom: 0,
           width: "280px",
           maxWidth: "80vw",
-          backgroundColor: "#0a0a0a",
-          borderRight: "1px solid #1a1a1a",
+          backgroundColor: "var(--card-background)",
+          borderRight: "1px solid var(--card-border)",
           zIndex: 51,
           transform: isSidebarOpen ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 0.3s ease-in-out",
@@ -149,14 +148,13 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Close Button */}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button 
               onClick={() => setIsSidebarOpen(false)}
               style={{
-                backgroundColor: "#121212",
-                border: "1px solid #262626",
-                color: "#ffffff",
+                backgroundColor: "var(--hover-background)",
+                border: "1px solid var(--card-border)",
+                color: "var(--foreground)",
                 borderRadius: "50%",
                 width: "30px",
                 height: "30px",
@@ -170,18 +168,16 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
             </button>
           </div>
 
-          {/* User Section */}
           <div
             style={{
               padding: "16px",
-              backgroundColor: "#121212",
+              backgroundColor: "var(--background)",
               borderRadius: "12px",
-              border: "1px solid #1a1a1a"
+              border: "1px solid var(--card-border)"
             }}
           >
             {user ? (
               <>
-                {/* User Profile */}
                 <Link
                   href="/profile"
                   onClick={() => setIsSidebarOpen(false)}
@@ -202,11 +198,11 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                       width: "56px",
                       height: "56px",
                       borderRadius: "50%",
-                      backgroundColor: "#1e1e1e",
+                      backgroundColor: "var(--hover-background)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#ffffff",
+                      color: "var(--foreground)",
                       fontSize: "24px",
                       fontWeight: "700",
                       position: "relative",
@@ -228,15 +224,15 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                         position: "absolute",
                         bottom: "-2px",
                         right: "-2px",
-                        backgroundColor: "#1e1e1e",
-                        border: "1px solid #262626",
+                        backgroundColor: "var(--card-background)",
+                        border: "1px solid var(--card-border)",
                         borderRadius: "50%",
                         width: "20px",
                         height: "20px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: "#888888",
+                        color: "var(--text-muted)",
                         fontSize: "10px"
                       }}
                     >
@@ -244,7 +240,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                     </div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ color: "#ffffff", fontSize: "15px", fontWeight: "600" }}>
+                    <div style={{ color: "var(--foreground)", fontSize: "15px", fontWeight: "600" }}>
                       {username}
                     </div>
                     <div style={{ 
@@ -258,7 +254,6 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                   </div>
                 </Link>
 
-                {/* Add Account Buttons */}
                 {currentRole === 'seller' && (
                   <button
                     onClick={handleAddBuyerAccount}
@@ -266,10 +261,10 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                       marginTop: "12px",
                       width: "100%",
                       padding: "10px",
-                      backgroundColor: "#1a1a1a",
-                      border: "1px solid #38bdf8",
+                      backgroundColor: "var(--background)",
+                      border: "1px solid var(--accent)",
                       borderRadius: "8px",
-                      color: "#38bdf8",
+                      color: "var(--accent)",
                       fontSize: "13px",
                       fontWeight: "500",
                       cursor: "pointer",
@@ -280,12 +275,12 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                       transition: "all 0.3s ease"
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#38bdf8";
+                      e.currentTarget.style.backgroundColor = "var(--accent)";
                       e.currentTarget.style.color = "#000000";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#1a1a1a";
-                      e.currentTarget.style.color = "#38bdf8";
+                      e.currentTarget.style.backgroundColor = "var(--background)";
+                      e.currentTarget.style.color = "var(--accent)";
                     }}
                   >
                     <ShoppingCart size={16} />
@@ -300,7 +295,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                       marginTop: "12px",
                       width: "100%",
                       padding: "10px",
-                      backgroundColor: "#1a1a1a",
+                      backgroundColor: "var(--background)",
                       border: "1px solid #FFD700",
                       borderRadius: "8px",
                       color: "#FFD700",
@@ -318,7 +313,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                       e.currentTarget.style.color = "#000000";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#1a1a1a";
+                      e.currentTarget.style.backgroundColor = "var(--background)";
                       e.currentTarget.style.color = "#FFD700";
                     }}
                   >
@@ -327,13 +322,12 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                   </button>
                 )}
 
-                {/* Navigation Links */}
                 <div style={{ 
                   marginTop: "12px", 
                   display: "flex", 
                   flexDirection: "column",
                   gap: "8px",
-                  borderTop: "1px solid #1a1a1a",
+                  borderTop: "1px solid var(--card-border)",
                   paddingTop: "12px"
                 }}>
                   <Link
@@ -344,10 +338,10 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                       alignItems: "center",
                       gap: "10px",
                       padding: "8px 12px",
-                      backgroundColor: "#1a1a1a",
-                      border: "1px solid #262626",
+                      backgroundColor: "var(--background)",
+                      border: "1px solid var(--card-border)",
                       borderRadius: "8px",
-                      color: "#ffffff",
+                      color: "var(--foreground)",
                       textDecoration: "none",
                       fontSize: "13px",
                       transition: "background 0.2s"
@@ -366,10 +360,10 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                         alignItems: "center",
                         gap: "10px",
                         padding: "8px 12px",
-                        backgroundColor: "#1a1a1a",
-                        border: "1px solid #262626",
+                        backgroundColor: "var(--background)",
+                        border: "1px solid var(--card-border)",
                         borderRadius: "8px",
-                        color: "#ffffff",
+                        color: "var(--foreground)",
                         textDecoration: "none",
                         fontSize: "13px",
                         transition: "background 0.2s"
@@ -380,7 +374,6 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                     </Link>
                   )}
 
-                  {/* ✅ Messages Link - ပြင်ဆင်ထားပြီး */}
                   <Link
                     href="/messages"
                     onClick={() => setIsSidebarOpen(false)}
@@ -389,10 +382,10 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                       alignItems: "center",
                       gap: "10px",
                       padding: "8px 12px",
-                      backgroundColor: "#1a1a1a",
-                      border: "1px solid #262626",
+                      backgroundColor: "var(--background)",
+                      border: "1px solid var(--card-border)",
                       borderRadius: "8px",
-                      color: "#ffffff",
+                      color: "var(--foreground)",
                       textDecoration: "none",
                       fontSize: "13px",
                       transition: "background 0.2s"
@@ -405,7 +398,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
               </>
             ) : (
               <div>
-                <div style={{ color: "#888888", fontSize: "13px", marginBottom: "8px", textAlign: "center" }}>
+                <div style={{ color: "var(--text-secondary)", fontSize: "13px", marginBottom: "8px", textAlign: "center" }}>
                   {t('sidebar.welcome')}
                 </div>
                 <div style={{ display: "flex", gap: "8px" }}>
@@ -415,10 +408,10 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                     style={{
                       flex: 1,
                       backgroundColor: "transparent",
-                      border: "1px solid #262626",
+                      border: "1px solid var(--card-border)",
                       borderRadius: "6px",
                       padding: "8px",
-                      color: "#ffffff",
+                      color: "var(--foreground)",
                       textDecoration: "none",
                       fontSize: "13px",
                       textAlign: "center",
@@ -433,7 +426,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                     onClick={() => setIsSidebarOpen(false)}
                     style={{
                       flex: 1,
-                      backgroundColor: "#ffffff",
+                      backgroundColor: "var(--accent)",
                       border: "none",
                       borderRadius: "6px",
                       padding: "8px",
@@ -452,7 +445,6 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
             )}
           </div>
 
-          {/* Menu Items */}
           <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <Link
               href={currentRole === 'seller' ? '/seller/settings' : '/settings'}
@@ -464,7 +456,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                 padding: "10px 14px",
                 backgroundColor: "transparent",
                 borderRadius: "8px",
-                color: "#e3e3e3",
+                color: "var(--foreground)",
                 fontSize: "14px",
                 fontWeight: 500,
                 cursor: "pointer",
@@ -485,7 +477,7 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                 backgroundColor: "transparent",
                 border: "none",
                 borderRadius: "8px",
-                color: "#e3e3e3",
+                color: "var(--foreground)",
                 fontSize: "14px",
                 fontWeight: 500,
                 cursor: "pointer",
@@ -507,10 +499,10 @@ export default function Sidebar({ isSidebarOpen, setIsSidebarOpen, user, userRol
                 alignItems: "center",
                 gap: "12px",
                 padding: "12px 14px",
-                backgroundColor: "#121212",
+                backgroundColor: "var(--background)",
                 border: "none",
                 borderRadius: "10px",
-                color: "#ef4444",
+                color: "var(--error)",
                 fontSize: "14px",
                 fontWeight: 500,
                 cursor: "pointer",

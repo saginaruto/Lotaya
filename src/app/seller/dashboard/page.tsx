@@ -47,7 +47,6 @@ export default function SellerDashboard() {
   const [selectedSalesYear, setSelectedSalesYear] = useState(() => new Date().getFullYear());
   const [error, setError] = useState<string | null>(null);
 
-  // Helper function for createdAt
   const getCreatedAtTime = (createdAt: any): number => {
     if (!createdAt) return 0;
     
@@ -67,7 +66,6 @@ export default function SellerDashboard() {
     return 0;
   };
 
-  // Auth state
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       try {
@@ -97,7 +95,6 @@ export default function SellerDashboard() {
     return () => unsubscribeAuth();
   }, [router]);
 
-  // Real-time listener for products
   useEffect(() => {
     if (!user) return;
 
@@ -157,7 +154,6 @@ export default function SellerDashboard() {
     });
   }, [user]);
 
-  // Search filter
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredProducts(products);
@@ -171,50 +167,48 @@ export default function SellerDashboard() {
     }
   }, [searchTerm, products]);
 
-  // Loading state
   if (loading) {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#000000', 
+        backgroundColor: 'var(--background)', 
         display: 'flex', 
         flexDirection: 'column',
         alignItems: 'center', 
         justifyContent: 'center',
-        color: '#ffffff',
+        color: 'var(--foreground)',
         gap: '16px'
       }}>
         <div>{t('common.loading')}</div>
-        <div style={{ color: '#888888', fontSize: '14px' }}>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
           {t('common.pleaseWait')}
         </div>
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div style={{ 
         minHeight: '100vh', 
-        backgroundColor: '#000000', 
+        backgroundColor: 'var(--background)', 
         display: 'flex', 
         flexDirection: 'column',
         alignItems: 'center', 
         justifyContent: 'center',
-        color: '#ffffff',
+        color: 'var(--foreground)',
         gap: '16px',
         padding: '20px'
       }}>
-        <div style={{ color: '#ef4444', fontSize: '20px' }}>⚠️ {t('common.error')}</div>
-        <div style={{ color: '#888888', fontSize: '14px', textAlign: 'center', maxWidth: '400px' }}>
+        <div style={{ color: 'var(--error)', fontSize: '20px' }}>⚠️ {t('common.error')}</div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', maxWidth: '400px' }}>
           {error}
         </div>
         <button
           onClick={() => window.location.reload()}
           style={{
             padding: '10px 24px',
-            backgroundColor: '#38bdf8',
+            backgroundColor: 'var(--accent)',
             color: '#000000',
             border: 'none',
             borderRadius: '8px',
@@ -232,7 +226,6 @@ export default function SellerDashboard() {
     return null;
   }
 
-  // Calculate low stock products (stock < 10)
   const lowStockCount = products.filter(p => (p.stock || 0) > 0 && (p.stock || 0) < 10).length;
   const outOfStockCount = products.filter(p => (p.stock || 0) === 0).length;
 
@@ -262,37 +255,36 @@ export default function SellerDashboard() {
   }).length;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '20px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)', padding: '20px' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-          <Link href="/" style={{ color: '#38bdf8', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <ArrowLeft size={20} />
           </Link>
-          <h1 style={{ color: '#ffffff', fontSize: '24px', fontWeight: '700', margin: 0 }}>
+          <h1 style={{ color: 'var(--foreground)', fontSize: '24px', fontWeight: '700', margin: 0 }}>
             {t('dashboard.title')}
           </h1>
         </div>
 
         {/* Welcome */}
         <div style={{
-          backgroundColor: '#121212',
-          border: '1px solid #262626',
+          backgroundColor: 'var(--card-background)',
+          border: '1px solid var(--card-border)',
           borderRadius: '12px',
           padding: '20px',
           marginBottom: '24px'
         }}>
-          <h2 style={{ color: '#ffffff', fontSize: '18px', margin: 0 }}>
+          <h2 style={{ color: 'var(--foreground)', fontSize: '18px', margin: 0 }}>
             {t('Welcome back')}, <span style={{ color: '#FFD700' }}>{userData.username || 'Seller'}</span>
           </h2>
-          <p style={{ color: '#888888', fontSize: '14px', marginTop: '4px' }}>
-            {t('dashboard.youHave')} <strong style={{ color: '#38bdf8' }}>{products.length}</strong> {t('dashboard.productsInShop')}
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>
+            {t('dashboard.youHave')} <strong style={{ color: 'var(--accent)' }}>{products.length}</strong> {t('dashboard.productsInShop')}
           </p>
-          {/* Stock Status Summary */}
           <div style={{ display: 'flex', gap: '16px', marginTop: '8px', flexWrap: 'wrap' }}>
             {outOfStockCount > 0 && (
               <span style={{ 
-                color: '#ef4444', 
+                color: 'var(--error)', 
                 fontSize: '13px', 
                 fontWeight: '500' 
               }}>
@@ -320,8 +312,8 @@ export default function SellerDashboard() {
         }}>
           <div
             style={{
-              backgroundColor: '#121212',
-              border: '1px solid #262626',
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--card-border)',
               borderRadius: '12px',
               padding: '16px',
               display: 'flex',
@@ -334,18 +326,18 @@ export default function SellerDashboard() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '8px',
-                backgroundColor: '#1a1a1a',
+                backgroundColor: 'var(--hover-background)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#38bdf8'
+                color: 'var(--accent)'
               }}
             >
               <Package size={20} />
             </div>
             <div>
-              <div style={{ color: '#888888', fontSize: '12px' }}>{t('dashboard.totalProducts')}</div>
-              <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: '700' }}>{products.length}</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t('dashboard.totalProducts')}</div>
+              <div style={{ color: 'var(--foreground)', fontSize: '18px', fontWeight: '700' }}>{products.length}</div>
             </div>
           </div>
           <div
@@ -357,39 +349,39 @@ export default function SellerDashboard() {
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') setIsSalesCalendarOpen((isOpen) => !isOpen);
             }}
-            style={{ backgroundColor: '#121212', border: '1px solid #262626', borderRadius: '12px', padding: '16px', cursor: 'pointer' }}
+            style={{ backgroundColor: 'var(--card-background)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '16px', cursor: 'pointer' }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
               <BarChart3 size={20} color="#22c55e" />
-              <strong style={{ color: '#ffffff', fontSize: '14px' }}>{t('dashboard.monthlySalesSummary')}</strong>
+              <strong style={{ color: 'var(--foreground)', fontSize: '14px' }}>{t('dashboard.monthlySalesSummary')}</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', color: '#d4d4d8', fontSize: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', color: 'var(--text-secondary)', fontSize: '12px' }}>
               <span>{monthNames[selectedSalesMonth]}</span>
-              <strong style={{ color: '#38bdf8', whiteSpace: 'nowrap' }}>{(selectedMonthSummary?.total || 0).toLocaleString()} MMK</strong>
+              <strong style={{ color: 'var(--accent)', whiteSpace: 'nowrap' }}>{(selectedMonthSummary?.total || 0).toLocaleString()} MMK</strong>
             </div>
-            <div style={{ color: '#888888', fontSize: '12px', marginTop: '5px' }}>{selectedMonthOrders} completed order{selectedMonthOrders === 1 ? '' : 's'}</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '5px' }}>{selectedMonthOrders} completed order{selectedMonthOrders === 1 ? '' : 's'}</div>
             {isSalesCalendarOpen && (
-              <div onClick={(event) => event.stopPropagation()} style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #27272a' }}>
-                <div style={{ color: '#fff', fontSize: '20px', fontWeight: 700, textAlign: 'center', marginBottom: '10px' }}>{selectedSalesYear}</div>
-                <div style={{ color: '#a1a1aa', fontSize: '11px', textAlign: 'center', marginBottom: '6px' }}>{t('dashboard.selectYear')}</div>
+              <div onClick={(event) => event.stopPropagation()} style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--card-border)' }}>
+                <div style={{ color: 'var(--foreground)', fontSize: '20px', fontWeight: 700, textAlign: 'center', marginBottom: '10px' }}>{selectedSalesYear}</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '11px', textAlign: 'center', marginBottom: '6px' }}>{t('dashboard.selectYear')}</div>
                 <div style={{ display: 'grid', gap: '6px', maxHeight: '96px', overflowY: 'auto', overscrollBehavior: 'contain', padding: '2px 4px 8px 2px', marginBottom: '12px' }}>
                   {availableYears.map((year) => (
                     <button
                       key={year}
                       onClick={() => setSelectedSalesYear(year)}
-                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: year === selectedSalesYear ? '1px solid #38bdf8' : '1px solid #3f3f46', backgroundColor: year === selectedSalesYear ? '#0c4a6e' : '#1a1a1a', color: '#fff', cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: year === selectedSalesYear ? '1px solid var(--accent)' : '1px solid var(--card-border)', backgroundColor: year === selectedSalesYear ? 'var(--hover-background)' : 'var(--card-background)', color: 'var(--foreground)', cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}
                     >
                       {year}
                     </button>
                   ))}
                 </div>
-                <div style={{ color: '#a1a1aa', fontSize: '11px', marginBottom: '7px' }}>{t('dashboard.selectMonth')}</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginBottom: '7px' }}>{t('dashboard.selectMonth')}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px' }}>
                   {monthNames.map((month, index) => (
                     <button
                       key={month}
                       onClick={() => setSelectedSalesMonth(index)}
-                      style={{ width: '100%', minWidth: 0, padding: '9px 4px', borderRadius: '6px', border: index === selectedSalesMonth ? '1px solid #38bdf8' : '1px solid #3f3f46', backgroundColor: index === selectedSalesMonth ? '#0c4a6e' : '#1a1a1a', color: '#fff', cursor: 'pointer', fontSize: '11px', textAlign: 'center' }}
+                      style={{ width: '100%', minWidth: 0, padding: '9px 4px', borderRadius: '6px', border: index === selectedSalesMonth ? '1px solid var(--accent)' : '1px solid var(--card-border)', backgroundColor: index === selectedSalesMonth ? 'var(--hover-background)' : 'var(--card-background)', color: 'var(--foreground)', cursor: 'pointer', fontSize: '11px', textAlign: 'center' }}
                     >
                       {month}
                     </button>
@@ -415,7 +407,7 @@ export default function SellerDashboard() {
               justifyContent: 'center',
               gap: '8px',
               padding: '12px 16px',
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--accent)',
               color: '#000000',
               borderRadius: '10px',
               textDecoration: 'none',
@@ -442,9 +434,9 @@ export default function SellerDashboard() {
               justifyContent: 'center',
               gap: '8px',
               padding: '12px 16px',
-              backgroundColor: '#1a1a1a',
-              border: '1px solid #262626',
-              color: '#ffffff',
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--card-border)',
+              color: 'var(--foreground)',
               borderRadius: '10px',
               textDecoration: 'none',
               fontSize: '14px',
@@ -452,12 +444,12 @@ export default function SellerDashboard() {
               transition: 'border-color 0.2s, background 0.2s'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#38bdf8';
-              e.currentTarget.style.backgroundColor = '#262626';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.backgroundColor = 'var(--hover-background)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#262626';
-              e.currentTarget.style.backgroundColor = '#1a1a1a';
+              e.currentTarget.style.borderColor = 'var(--card-border)';
+              e.currentTarget.style.backgroundColor = 'var(--card-background)';
             }}
           >
             <Package size={18} />
@@ -472,14 +464,22 @@ export default function SellerDashboard() {
               justifyContent: 'center',
               gap: '8px',
               padding: '12px 16px',
-              backgroundColor: '#1a1a1a',
-              border: '1px solid #262626',
-              color: '#ffffff',
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--card-border)',
+              color: 'var(--foreground)',
               borderRadius: '10px',
               textDecoration: 'none',
               fontSize: '14px',
               fontWeight: '600',
               transition: 'border-color 0.2s, background 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.backgroundColor = 'var(--hover-background)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--card-border)';
+              e.currentTarget.style.backgroundColor = 'var(--card-background)';
             }}
           >
             <ClipboardList size={18} />
@@ -494,14 +494,22 @@ export default function SellerDashboard() {
               justifyContent: 'center',
               gap: '8px',
               padding: '12px 16px',
-              backgroundColor: '#1a1a1a',
-              border: '1px solid #262626',
-              color: '#ffffff',
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--card-border)',
+              color: 'var(--foreground)',
               borderRadius: '10px',
               textDecoration: 'none',
               fontSize: '14px',
               fontWeight: '600',
               transition: 'border-color 0.2s, background 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.backgroundColor = 'var(--hover-background)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--card-border)';
+              e.currentTarget.style.backgroundColor = 'var(--card-background)';
             }}
           >
             <BarChart3 size={18} />
@@ -511,18 +519,18 @@ export default function SellerDashboard() {
 
         {/* Products Section with Search Bar */}
         <div style={{
-          backgroundColor: '#121212',
-          border: '1px solid #262626',
+          backgroundColor: 'var(--card-background)',
+          border: '1px solid var(--card-border)',
           borderRadius: '12px',
           padding: '20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h3 style={{ color: '#ffffff', fontSize: '16px', fontWeight: '600', margin: 0 }}>
+            <h3 style={{ color: 'var(--foreground)', fontSize: '16px', fontWeight: '600', margin: 0 }}>
               {t('dashboard.recentProducts')}
             </h3>
             <Link 
               href="/seller/products"
-              style={{ color: '#888888', fontSize: '12px', cursor: 'pointer', textDecoration: 'none' }}
+              style={{ color: 'var(--text-secondary)', fontSize: '12px', cursor: 'pointer', textDecoration: 'none' }}
             >
               {t('dashboard.viewAll')} →
             </Link>
@@ -542,20 +550,20 @@ export default function SellerDashboard() {
                 width: '100%',
                 padding: '10px 14px',
                 paddingLeft: '40px',
-                backgroundColor: '#1a1a1a',
-                border: '1px solid #262626',
+                backgroundColor: 'var(--input-background)',
+                border: '1px solid var(--input-border)',
                 borderRadius: '10px',
-                color: '#ffffff',
+                color: 'var(--foreground)',
                 fontSize: '14px',
                 outline: 'none',
                 boxSizing: 'border-box',
                 transition: 'border-color 0.2s'
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#38bdf8';
+                e.currentTarget.style.borderColor = 'var(--accent)';
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#262626';
+                e.currentTarget.style.borderColor = 'var(--input-border)';
               }}
             />
             <Search 
@@ -565,7 +573,7 @@ export default function SellerDashboard() {
                 left: '12px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#666666'
+                color: 'var(--text-muted)'
               }}
             />
             {searchTerm && (
@@ -578,7 +586,7 @@ export default function SellerDashboard() {
                   transform: 'translateY(-50%)',
                   backgroundColor: 'transparent',
                   border: 'none',
-                  color: '#666666',
+                  color: 'var(--text-muted)',
                   cursor: 'pointer',
                   fontSize: '14px',
                   padding: '4px 8px'
@@ -589,10 +597,9 @@ export default function SellerDashboard() {
             )}
           </div>
 
-          {/* Search Result Count */}
           {searchTerm && (
             <div style={{
-              color: '#888888',
+              color: 'var(--text-secondary)',
               fontSize: '12px',
               marginBottom: '12px'
             }}>
@@ -601,7 +608,7 @@ export default function SellerDashboard() {
           )}
           
           {filteredProducts.length === 0 ? (
-            <div style={{ color: '#888888', fontSize: '14px', textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', padding: '20px 0' }}>
               {searchTerm ? t('dashboard.noMatch') : t('dashboard.noProducts')}
             </div>
           ) : (
@@ -619,26 +626,26 @@ export default function SellerDashboard() {
                   <div
                     key={product.id}
                     style={{
-                      backgroundColor: '#1a1a1a',
+                      backgroundColor: 'var(--card-background)',
                       borderRadius: '10px',
                       overflow: 'hidden',
-                      border: isOutOfStock ? '2px solid #ef4444' : 
+                      border: isOutOfStock ? '2px solid var(--error)' : 
                               isLowStock ? '2px solid #f59e0b' : 
-                              '1px solid #262626',
+                              '1px solid var(--card-border)',
                       transition: 'transform 0.2s, border-color 0.2s',
                       cursor: 'pointer'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#38bdf8';
+                      e.currentTarget.style.borderColor = 'var(--accent)';
                       e.currentTarget.style.transform = 'scale(1.03)';
                     }}
                     onMouseLeave={(e) => {
                       if (isOutOfStock) {
-                        e.currentTarget.style.borderColor = '#ef4444';
+                        e.currentTarget.style.borderColor = 'var(--error)';
                       } else if (isLowStock) {
                         e.currentTarget.style.borderColor = '#f59e0b';
                       } else {
-                        e.currentTarget.style.borderColor = '#262626';
+                        e.currentTarget.style.borderColor = 'var(--card-border)';
                       }
                       e.currentTarget.style.transform = 'scale(1)';
                     }}
@@ -657,7 +664,7 @@ export default function SellerDashboard() {
                     />
                     <div style={{ padding: '10px 12px 12px 12px' }}>
                       <h4 style={{ 
-                        color: '#ffffff', 
+                        color: 'var(--foreground)', 
                         fontSize: '13px', 
                         fontWeight: '600', 
                         margin: '0 0 4px 0',
@@ -667,15 +674,14 @@ export default function SellerDashboard() {
                       }}>
                         {product.title || 'Untitled'}
                       </h4>
-                      <p style={{ color: '#38bdf8', fontSize: '13px', fontWeight: '700', margin: '0 0 2px 0' }}>
+                      <p style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: '700', margin: '0 0 2px 0' }}>
                         {product.price || 'N/A'}
                       </p>
                       
-                      {/* Stock Display */}
                       <p style={{ 
-                        color: isOutOfStock ? '#ef4444' : 
+                        color: isOutOfStock ? 'var(--error)' : 
                                isLowStock ? '#f59e0b' : 
-                               '#22c55e', 
+                               'var(--success)', 
                         fontSize: '11px', 
                         fontWeight: '600', 
                         margin: '0 0 2px 0' 
@@ -685,7 +691,7 @@ export default function SellerDashboard() {
                             `${stock} ${t('dashboard.inStock')}`}
                       </p>
                       
-                      <p style={{ color: '#666666', fontSize: '10px', margin: '0' }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '10px', margin: '0' }}>
                         {product.category || 'Uncategorized'} • {product.brand || 'No Brand'}
                       </p>
                     </div>

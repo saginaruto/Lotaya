@@ -1,8 +1,12 @@
+// components/Header.tsx
 'use client';
 
-import { Menu, MapPin, ChevronDown, Search, X } from "lucide-react";
+import { Menu, MapPin, ChevronDown, Search, X, Heart } from "lucide-react";
 import { useLanguage } from '@/components/LanguageProvider';
 import { translateCity } from '@/data/cities';
+import { useWishlist } from '@/context/WishlistContext';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
 
 interface HeaderProps {
   setIsSidebarOpen: (value: boolean) => void;
@@ -30,8 +34,21 @@ export default function Header({
   setSelectedCategory,
 }: HeaderProps) {
   const { language, t } = useLanguage();
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const [isWishlistReady, setIsWishlistReady] = useState(false);
 
-  // Get translated location name
+  // ✅ Wishlist context ကို safe ဖြစ်အောင်သုံးပါ
+  useEffect(() => {
+    try {
+      const context = useWishlist();
+      setWishlistCount(context.wishlist.length);
+      setIsWishlistReady(true);
+    } catch (error) {
+      console.debug('Wishlist context not available yet');
+      setIsWishlistReady(false);
+    }
+  }, []);
+
   const getLocationDisplay = () => {
     if (selectedLocation === "All") {
       return t('header.allLocations');
@@ -42,12 +59,12 @@ export default function Header({
   return (
     <header 
       style={{ 
-        backgroundColor: "#000000", 
+        backgroundColor: "var(--background)", 
         flexShrink: 0,
         padding: "12px 16px 8px 16px",
         maxWidth: "100%",
         boxSizing: "border-box",
-        borderBottom: "1px solid #1a1a1a",
+        borderBottom: "1px solid var(--card-border)",
         zIndex: 20
       }}
     >
@@ -61,47 +78,93 @@ export default function Header({
         }}
       >
         {/* Top Row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                style={{
-                  backgroundColor: "transparent",
-                  border: "none",
-                  color: "#ffffff",
-                  cursor: "pointer",
-                  padding: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "40px",
-                  width: "40px",
-                  lineHeight: 0
-                }}
-              >
-                <Menu size={24} />
-              </button>
-
-              <div style={{ 
-                cursor: "pointer", 
-                display: "flex", 
-                alignItems: "center", 
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              style={{
+                backgroundColor: "transparent",
+                border: "none",
+                color: "var(--foreground)",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+                alignItems: "center",
                 justifyContent: "center",
-                height: "40px"
-              }}>
-                <img 
-                  src="/logo.png" 
-                  alt="D Saing Logo" 
-                  style={{ 
-                    height: "42px", 
-                    width: "auto", 
-                    maxWidth: "200px",
-                    objectFit: "contain",
-                    display: "block"
-                  }} 
-                />
-              </div>
+                height: "40px",
+                width: "40px",
+                lineHeight: 0
+              }}
+            >
+              <Menu size={24} />
+            </button>
+
+            <div style={{ 
+              cursor: "pointer", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center",
+              height: "40px"
+            }}>
+              <img 
+                src="/logo.png"
+                alt="D Saing Logo" 
+                className="logo"
+              />
             </div>
+          </div>
+
+          {/* Right Side - Wishlist + Location */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Wishlist Button */}
+            <Link
+              href="/wishlist"
+              style={{
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "transparent",
+                border: "none",
+                color: "var(--foreground)",
+                cursor: "pointer",
+                padding: "4px",
+                height: "36px",
+                width: "36px",
+                borderRadius: "50%",
+                textDecoration: "none"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--hover-background)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              <Heart size={20} />
+              {isWishlistReady && wishlistCount > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "-2px",
+                    right: "-2px",
+                    backgroundColor: "#ef4444",
+                    color: "#ffffff",
+                    fontSize: "10px",
+                    fontWeight: "600",
+                    borderRadius: "50%",
+                    width: "18px",
+                    height: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "2px solid var(--background)"
+                  }}
+                >
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
 
             {/* Location Button */}
             <button
@@ -110,11 +173,11 @@ export default function Header({
                 display: "flex",
                 alignItems: "center",
                 gap: "4px",
-                backgroundColor: "#121212",
-                border: "1px solid #262626",
+                backgroundColor: "var(--card-background)",
+                border: "1px solid var(--card-border)",
                 borderRadius: "16px",
                 padding: "6px 10px",
-                color: "#ffffff",
+                color: "var(--foreground)",
                 cursor: "pointer",
                 maxWidth: "150px",
                 height: "36px"
@@ -128,22 +191,23 @@ export default function Header({
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
-                  color: selectedLocation === "All" ? "#FFD700" : "#ffffff"
+                  color: selectedLocation === "All" ? "#FFD700" : "var(--foreground)"
                 }}
               >
                 {getLocationDisplay()}
               </span>
-              <ChevronDown size={12} style={{ color: "#888888", flexShrink: 0 }} />
+              <ChevronDown size={12} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
             </button>
           </div>
+        </div>
 
         {/* Search Box */}
         <div 
           style={{ 
             display: "flex", 
             alignItems: "center", 
-            backgroundColor: "#121212", 
-            border: "1px solid #262626",
+            backgroundColor: "var(--input-background)", 
+            border: "1px solid var(--input-border)",
             borderRadius: "20px",
             padding: "8px 14px",
             width: "100%",
@@ -151,7 +215,7 @@ export default function Header({
             position: "relative"
           }}
         >
-          <Search size={16} style={{ color: "#737373", marginRight: "8px" }} />
+          <Search size={16} style={{ color: "var(--text-muted)", marginRight: "8px" }} />
           <input 
             type="text" 
             placeholder={t('header.searchPlaceholder').replace('{location}', getLocationDisplay())}
@@ -161,7 +225,7 @@ export default function Header({
               backgroundColor: "transparent", 
               border: "none", 
               outline: "none", 
-              color: "#ffffff", 
+              color: "var(--foreground)", 
               fontSize: "13px",
               width: "100%"
             }}
@@ -172,7 +236,7 @@ export default function Header({
               style={{
                 backgroundColor: "transparent",
                 border: "none",
-                color: "#888888",
+                color: "var(--text-muted)",
                 cursor: "pointer",
                 padding: "4px"
               }}
@@ -208,12 +272,12 @@ export default function Header({
                   backgroundColor: "transparent",
                   border: "none",
                   padding: "4px 2px",
-                  color: isSelected ? "#ffffff" : "#888888",
+                  color: isSelected ? "var(--foreground)" : "var(--text-muted)",
                   fontWeight: isSelected ? "600" : "400",
                   fontSize: "13px",
                   cursor: "pointer",
                   flexShrink: 0,
-                  borderBottom: isSelected ? "2px solid #ffffff" : "2px solid transparent",
+                  borderBottom: isSelected ? "2px solid var(--accent)" : "2px solid transparent",
                   transition: "all 0.2s ease"
                 }}
               >

@@ -122,7 +122,7 @@ export default function ProductDetailModal({
       style={{
         position: "fixed",
         inset: 0,
-        backgroundColor: "#000000",
+        backgroundColor: "var(--background)",
         zIndex: 100,
         display: "flex",
         flexDirection: "column",
@@ -138,8 +138,8 @@ export default function ProductDetailModal({
           top: "16px",
           right: "16px",
           backgroundColor: "rgba(0,0,0,0.7)",
-          border: "1px solid #333333",
-          color: "#ffffff",
+          border: "1px solid var(--card-border)",
+          color: "var(--foreground)",
           borderRadius: "50%",
           width: "40px",
           height: "40px",
@@ -158,7 +158,7 @@ export default function ProductDetailModal({
         style={{
           width: "100%",
           height: "55vh",
-          backgroundColor: "#0a0a0a",
+          backgroundColor: "var(--card-background)",
           position: "relative",
           flexShrink: 0,
           overflow: "hidden"
@@ -206,7 +206,7 @@ export default function ProductDetailModal({
           />
         </div>
 
-        {/* ====== 🆕 OVERLAY LOCATION + MARQUEE - ပုံအောက်ခြေမှာ အမြဲမြင်ရမယ် ====== */}
+        {/* ====== OVERLAY LOCATION + MARQUEE ====== */}
         <div
           style={{
             position: "absolute",
@@ -219,7 +219,6 @@ export default function ProductDetailModal({
             overflow: "hidden"
           }}
         >
-          {/* Marquee Container */}
           <div
             style={{
               display: "flex",
@@ -251,7 +250,7 @@ export default function ProductDetailModal({
                 <span
                   style={{
                     fontSize: "13px",
-                    color: "#38bdf8",
+                    color: "var(--accent)",
                     fontWeight: "400"
                   }}
                 >
@@ -271,7 +270,7 @@ export default function ProductDetailModal({
                       gap: "4px"
                     }}
                   >
-                    <Phone size={13} style={{ color: "#22c55e" }} />
+                    <Phone size={13} style={{ color: "var(--success)" }} />
                     {sellerPhone}
                   </span>
                 )}
@@ -281,7 +280,7 @@ export default function ProductDetailModal({
         </div>
       </div>
 
-      {/* ====== Bottom Info - ပုံအောက်ခြေကပ်ပြီး ====== */}
+      {/* ====== Bottom Info ====== */}
       <div
         style={{
           padding: "12px 16px 12px 16px",
@@ -298,7 +297,7 @@ export default function ProductDetailModal({
             <span
               style={{
                 display: "inline-block",
-                backgroundColor: "#ef4444",
+                backgroundColor: "var(--error)",
                 color: "#ffffff",
                 fontSize: "11px",
                 fontWeight: "700",
@@ -335,7 +334,7 @@ export default function ProductDetailModal({
                 style={{
                   fontSize: "18px",
                   fontWeight: "700",
-                  color: "#ffffff",
+                  color: "var(--foreground)",
                   margin: "0 0 4px 0",
                   lineHeight: 1.3
                 }}
@@ -344,7 +343,7 @@ export default function ProductDetailModal({
               </h3>
             </div>
 
-            {/* ✅ Chat Button - Product Name နဲ့ တစ်တန်းတည်း */}
+            {/* Chat Button */}
             {!loading && allowChat && !isOwner && product.sellerId && (
               <button
                 onClick={(e) => {
@@ -352,7 +351,7 @@ export default function ProductDetailModal({
                   handleChatNow();
                 }}
                 style={{
-                  backgroundColor: "#38bdf8",
+                  backgroundColor: "var(--accent)",
                   color: "#000000",
                   border: "none",
                   borderRadius: "50px",
@@ -378,7 +377,7 @@ export default function ProductDetailModal({
             style={{
               fontSize: "18px",
               fontWeight: "700",
-              color: "#22c55e",
+              color: "var(--success)",
               marginTop: "2px"
             }}
           >
@@ -390,8 +389,8 @@ export default function ProductDetailModal({
         {product?.description && (
           <div
             style={{
-              backgroundColor: "#1a1a1a",
-              border: "1px solid #262626",
+              backgroundColor: "var(--card-background)",
+              border: "1px solid var(--card-border)",
               borderRadius: "8px",
               padding: "10px 14px",
               flex: 1,
@@ -416,7 +415,7 @@ export default function ProductDetailModal({
             </div>
             <div
               style={{
-                color: "#ffffff",
+                color: "var(--foreground)",
                 fontSize: "13px",
                 lineHeight: 1.7,
                 whiteSpace: "pre-wrap",
@@ -427,9 +426,6 @@ export default function ProductDetailModal({
             </div>
           </div>
         )}
-
-        {/* ====== အောက်ဆုံးက Marquee ကို ဖယ်လိုက်ပြီ ====== */}
-        {/* မလိုတော့ဘူးဆိုတော့ ဒီနေရာမှာ ဘာမှမထည့်ပါနဲ့ */}
       </div>
 
       <style>{`
