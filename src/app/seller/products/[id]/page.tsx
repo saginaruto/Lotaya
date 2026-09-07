@@ -7,14 +7,31 @@ import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useWishlist } from '@/context/WishlistContext';
 import { Heart, ArrowLeft, ShoppingCart } from 'lucide-react';
+import ReviewForm from '@/components/ReviewForm';
+import ReviewsList from '@/components/ReviewsList';
 
 export default function SellerProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showReviewForm, setShowReviewForm] = useState(false);
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const isWishlisted = isInWishlist(id as string);
+
+  // Refresh product function
+  const refreshProduct = async () => {
+    if (!id) return;
+    try {
+      const docRef = doc(db, 'products', id as string);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setProduct({ id: docSnap.id, ...docSnap.data() });
+      }
+    } catch (error) {
+      console.error('Error refreshing product:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -164,7 +181,7 @@ export default function SellerProductDetailPage() {
           )}
         </div>
 
-        {/* ✅ Wishlist Button */}
+        {/* Wishlist Button */}
         <button
           onClick={handleWishlist}
           style={{
@@ -248,6 +265,52 @@ export default function SellerProductDetailPage() {
         <ShoppingCart size={20} />
         Add to Cart
       </button>
+
+      {/* ========== Reviews Section ========== */}
+      <div style={{ marginTop: '32px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          marginBottom: '16px' 
+        }}>
+          <h3 style={{ 
+            color: 'var(--text-primary)', 
+            fontSize: '16px', 
+            fontWeight: '600' 
+          }}>
+            ⭐ Reviews ({product.totalReviews || 0})
+          </h3>
+          <button
+            onClick={() => setShowReviewForm(true)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: 'var(--accent)',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#000',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            Write a Review
+          </button>
+        </div>
+
+        <ReviewsList productId={product.id} />
+
+        {showReviewForm && (
+          <ReviewForm
+            productId={product.id}
+            onClose={() => setShowReviewForm(false)}
+            onSuccess={() => {
+              setShowReviewForm(false);
+              refreshProduct();
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

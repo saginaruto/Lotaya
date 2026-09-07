@@ -1,7 +1,7 @@
 // components/ProductDetailModal.tsx
 'use client';
 
-import { X, MapPin, MessageCircle, Phone, Heart } from "lucide-react";
+import { X, MapPin, MessageCircle, Phone, Heart, Star } from "lucide-react";
 import { useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/components/LanguageProvider';
 import { getChatRoom, createChatId } from '@/lib/chat';
 import { useWishlist } from '@/context/WishlistContext';
+import ReviewForm from './ReviewForm';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ interface ProductDetailModalProps {
 export default function ProductDetailModal({ 
   isOpen, 
   onClose, 
-  product,
+  product: initialProduct,
   onChatNow,
   allowChat = true
 }: ProductDetailModalProps) {
@@ -31,6 +32,8 @@ export default function ProductDetailModal({
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [sellerPhone, setSellerPhone] = useState<string>('');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [product, setProduct] = useState(initialProduct);
   const { language } = useLanguage();
 
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
@@ -38,7 +41,25 @@ export default function ProductDetailModal({
 
   const lastTapRef = useRef<number>(0);
 
-  // ✅ User Role ကို စစ်မယ်
+  // ✅ Product ကို Refresh လုပ်မယ်
+  const refreshProduct = async () => {
+    if (!product?.id) return;
+    try {
+      const docRef = doc(db, 'products', product.id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setProduct({ id: docSnap.id, ...docSnap.data() });
+      }
+    } catch (error) {
+      console.error('Error refreshing product:', error);
+    }
+  };
+
+  // ✅ initialProduct ပြောင်းရင် product ကိုလည်း update လုပ်မယ်
+  useEffect(() => {
+    setProduct(initialProduct);
+  }, [initialProduct]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -62,7 +83,6 @@ export default function ProductDetailModal({
   const handleDoubleTap = async (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     
-    // ✅ ဝယ်သူမှသာ Wishlist ထည့်လို့ရမယ်
     if (userRole !== 'user') return;
     
     const now = Date.now();
@@ -142,6 +162,15 @@ export default function ProductDetailModal({
     }
   };
 
+  const handleOpenReviewForm = () => {
+    if (!currentUser) {
+      alert('Please login to write a review');
+      router.push('/login');
+      return;
+    }
+    setShowReviewForm(true);
+  };
+
   if (!isOpen || !product) return null;
 
   const isOwner = currentUser?.uid === product.sellerId;
@@ -160,7 +189,6 @@ export default function ProductDetailModal({
       }}
       onClick={handleOutsideClick}
     >
-      {/* Close Button */}
       <button
         onClick={onClose}
         style={{
@@ -183,7 +211,6 @@ export default function ProductDetailModal({
         <X size={24} />
       </button>
 
-      {/* ✅ Wishlist Status - ဝယ်သူမှာပဲပြမယ် */}
       {isBuyer && (
         <div
           style={{
@@ -215,7 +242,6 @@ export default function ProductDetailModal({
         </div>
       )}
 
-      {/* Product Image */}
       <div
         style={{
           width: "100%",
@@ -241,7 +267,6 @@ export default function ProductDetailModal({
           }}
         />
 
-        {/* Shop Logo */}
         <div
           style={{
             position: "absolute",
@@ -271,7 +296,6 @@ export default function ProductDetailModal({
           />
         </div>
 
-        {/* Overlay + Marquee */}
         <div
           style={{
             position: "absolute",
@@ -383,7 +407,7 @@ export default function ProductDetailModal({
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2
                 style={{
-                  fontSize: "13px",
+                  fontSize: "18px",
                   fontWeight: "500",
                   color: "#F59E0B",
                   margin: "0 0 2px 0"
@@ -393,7 +417,7 @@ export default function ProductDetailModal({
               </h2>
               <h3
                 style={{
-                  fontSize: "18px",
+                  fontSize: "15px",
                   fontWeight: "700",
                   color: "var(--foreground)",
                   margin: "0 0 4px 0",
@@ -402,6 +426,40 @@ export default function ProductDetailModal({
               >
                 {product.title}
               </h3>
+
+              {/* ✅ ⭐ Reviews - Product Title နဲ့ Price ကြားထဲမှာ */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  marginTop: "2px",
+                  marginBottom: "4px",
+                  cursor: "pointer"
+                }}
+                onClick={handleOpenReviewForm}
+              >
+                <Star size={15} style={{ color: "#F59E0B", fill: "#F59E0B" }} />
+                <span style={{
+                  color: "var(--text-secondary)",
+                  fontSize: "14px",
+                  fontWeight: "500"
+                }}>
+                  {product.averageRating || 0} ({product.totalReviews || 0})
+                </span>                
+              </div>
+
+              {/* Price */}
+              <div
+                style={{
+                  fontSize: "15px",
+                  fontWeight: "700",
+                  color: "var(--success)",
+                  marginTop: "2px"
+                }}
+              >
+                {product.price} MMK
+              </div>
             </div>
 
             {!loading && allowChat && !isOwner && product.sellerId && (
@@ -430,17 +488,6 @@ export default function ProductDetailModal({
                 Chat Now
               </button>
             )}
-          </div>
-
-          <div
-            style={{
-              fontSize: "18px",
-              fontWeight: "700",
-              color: "var(--success)",
-              marginTop: "2px"
-            }}
-          >
-            {product.price} MMK
           </div>
         </div>
 
@@ -485,6 +532,18 @@ export default function ProductDetailModal({
           </div>
         )}
       </div>
+
+      {/* ✅ Review Form - onSuccess မှာ refreshProduct ကိုခေါ်မယ် */}
+      {showReviewForm && (
+        <ReviewForm
+          productId={product.id}
+          onClose={() => setShowReviewForm(false)}
+          onSuccess={() => {
+            setShowReviewForm(false);
+            refreshProduct(); // ✅ Product Data ကို Refresh လုပ်မယ်
+          }}
+        />
+      )}
 
       <style>{`
         @keyframes fadeIn {

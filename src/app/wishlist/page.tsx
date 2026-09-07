@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';  // ✅ တစ်ခါပဲ import လုပ်ပါ
+import { doc, getDoc } from 'firebase/firestore';
 import ProductDetailModal from '@/components/ProductDetailModal';
 
 interface Product {
@@ -30,7 +30,7 @@ export default function WishlistPage() {
   const [userRole, setUserRole] = useState<'user' | 'seller' | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
-  // Modal State
+  // ✅ Modal State
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -103,6 +103,7 @@ export default function WishlistPage() {
     fetchWishlistProducts();
   }, [wishlist]);
 
+  // ✅ Product ကို နှိပ်ရင် Modal ဖွင့်မယ်
   const handleProductClick = (product: Product) => {
     if (selectMode) return;
     setSelectedProduct(product);
@@ -329,6 +330,7 @@ export default function WishlistPage() {
                 if (selectMode) {
                   toggleSelect(product.id);
                 } else {
+                  // ✅ Modal ကိုဖွင့်မယ်
                   handleProductClick(product);
                 }
               }}
@@ -352,18 +354,20 @@ export default function WishlistPage() {
             >
               {/* Selection Checkbox */}
               {selectMode && (
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  border: '2px solid var(--card-border)',
-                  backgroundColor: isSelected ? 'var(--accent)' : 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  transition: 'all 0.2s ease'
-                }}>
+                <div
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    border: '2px solid var(--card-border)',
+                    backgroundColor: isSelected ? 'var(--accent)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
                   {isSelected && <Check size={14} color="#000" />}
                 </div>
               )}
@@ -513,7 +517,7 @@ export default function WishlistPage() {
         </div>
       )}
 
-      {/* ProductDetailModal */}
+      {/* ✅ ProductDetailModal */}
       {selectedProduct && (
         <ProductDetailModal
           isOpen={isModalOpen}

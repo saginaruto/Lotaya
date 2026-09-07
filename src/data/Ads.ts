@@ -24,6 +24,8 @@ export interface AdItem {
   description?: string;
   sellerId?: string;
   cta?: string;
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 // 📌 ကြော်ငြာထည့်တဲ့ပုံစံ (မှတ်သားရန်)

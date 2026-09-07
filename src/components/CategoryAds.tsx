@@ -362,6 +362,38 @@ export default function CategoryAds({
                         >
                           {ad.price} MMK
                         </span>
+
+                        {/* ✅ ⭐ Reviews - ညာဘက်အောက်ထောင့်မှာ */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            bottom: "6px",
+                            right: "8px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            backgroundColor: "rgba(0,0,0,0.6)",
+                            padding: "2px 8px",
+                            borderRadius: "10px",
+                            backdropFilter: "blur(4px)"
+                          }}
+                        >
+                          <span style={{ fontSize: "10px", color: "#F59E0B" }}>⭐</span>
+                          <span style={{
+                            fontSize: "10px",
+                            fontWeight: "600",
+                            color: "#ffffff"
+                          }}>
+                            {ad.averageRating || 0}
+                          </span>
+                          <span style={{
+                            fontSize: "10px",
+                            fontWeight: "400",
+                            color: "rgba(255,255,255,0.6)"
+                          }}>
+                            ({ad.totalReviews || 0})
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

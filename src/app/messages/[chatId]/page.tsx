@@ -1,104 +1,127 @@
+// app/messages/[chatId]/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import ChatRoom from '@/components/ChatRoom';
 import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 
 export default function ChatRoomPage() {
-  const params = useParams();
+  const { chatId } = useParams();
   const router = useRouter();
-  const chatId = params.chatId as string;
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [userRole, setUserRole] = useState<'user' | 'seller' | null>(null);
   const [loading, setLoading] = useState(true);
-  const [language, setLanguage] = useState<string>('en');
-  const [userRole, setUserRole] = useState<'user' | 'seller'>('user');
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-      setCurrentUser(user);
-
-      try {
-        // 1. Fetch user language
-        const userRef = doc(db, 'users', user.uid);
-        const snapshot = await getDoc(userRef);
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          if (data.language) {
-            setLanguage(data.language);
+      if (user) {
+        setCurrentUserId(user.uid);
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const role = userSnap.data().role || 'user';
+            setUserRole(role);
+          } else {
+            setUserRole('user');
           }
-          if (data.role === 'seller' || data.role === 'VENDOR') {
-            setUserRole('seller');
-          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+          setUserRole('user');
         }
-      } catch (error) {
-        console.error('Error determining user role:', error);
-      } finally {
-        setLoading(false);
+      } else {
+        setCurrentUserId('');
+        setUserRole(null);
       }
+      setLoading(false);
     });
-
     return () => unsubscribe();
-  }, [chatId, router]);
+  }, []);
 
   if (loading) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#000000', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        color: '#ffffff' 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '60vh',
+        color: 'var(--text-secondary)',
+        backgroundColor: 'var(--background)'
       }}>
         Loading...
       </div>
     );
   }
 
-  return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#000000', padding: '16px' }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto', height: 'calc(100vh - 32px)' }}>
-        {/* Back Button - ✅ ပြင်ဆင်ပြီး */}
-        <div style={{ marginBottom: '16px' }}>
-          <Link
-            href="/messages"
-            style={{ 
-              color: '#38bdf8', 
-              textDecoration: 'none', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '6px' 
-            }}
-          >
-            <ArrowLeft size={18} />
-            <span style={{ fontSize: '13px' }}>
-              {language === 'my' ? 'နောက်သို့' : 'Back'}
-            </span>
-          </Link>
-        </div>
+  if (!chatId) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '60vh',
+        color: 'var(--text-secondary)',
+        backgroundColor: 'var(--background)'
+      }}>
+        Chat not found
+      </div>
+    );
+  }
 
-        <div style={{
-          backgroundColor: '#121212',
-          border: '1px solid #262626',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          height: 'calc(100% - 60px)'
+  return (
+    // ✅ ဒီ Container က Background ကို သတ်မှတ်ပေးထားတယ်
+    <div style={{ 
+      height: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column',
+      backgroundColor: 'var(--background)'  // ✅ ဒါက Dark/Light Mode အတိုင်းလိုက်မယ်
+    }}>
+      {/* ✅ Header - Back Button ပါတဲ့ အပေါ်ဘက် */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: '12px 16px',
+        backgroundColor: 'var(--card-background)',  // ✅ ဒါက Mode အတိုင်းလိုက်မယ်
+        borderBottom: '1px solid var(--card-border)',
+        flexShrink: 0
+      }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            backgroundColor: 'transparent',
+            border: 'none',
+            color: 'var(--foreground)',  // ✅ ဒါက Mode အတိုင်းလိုက်မယ်
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '14px'
+          }}
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <span style={{
+          color: 'var(--text-primary)',
+          fontSize: '16px',
+          fontWeight: '600',
+          marginLeft: '8px'
         }}>
-          <ChatRoom 
-            chatId={chatId} 
-            userRole={userRole} 
-            currentUserId={currentUser?.uid} 
-          />
-        </div>
+          Chat Room
+        </span>
+      </div>
+
+      {/* ChatRoom Component */}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <ChatRoom
+          chatId={chatId as string}
+          currentUserId={currentUserId}
+          userRole={userRole}
+        />
       </div>
     </div>
   );
