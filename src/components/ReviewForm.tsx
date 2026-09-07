@@ -8,8 +8,7 @@ import {
   addDoc, 
   collection, 
   serverTimestamp, 
-  runTransaction,
-  increment 
+  runTransaction 
 } from 'firebase/firestore';
 import StarRating from './StarRating';
 import { X } from 'lucide-react';
@@ -57,9 +56,7 @@ export default function ReviewForm({
     try {
       const productRef = doc(db, 'products', productId);
 
-      // ✅ Transaction သုံးပြီး Product ကို update လုပ်မယ်
       await runTransaction(db, async (transaction) => {
-        // 1. Product ရဲ့ လက်ရှိ data ကိုဖတ်မယ်
         const productSnap = await transaction.get(productRef);
         if (!productSnap.exists()) {
           throw new Error('Product not found');
@@ -69,18 +66,15 @@ export default function ReviewForm({
         const currentTotal = productData.totalReviews || 0;
         const currentAvg = productData.averageRating || 0;
 
-        // 2. ပျမ်းမျှအဆင့်ကို တွက်မယ်
         const newTotal = currentTotal + 1;
         const newAvg = ((currentAvg * currentTotal) + rating) / newTotal;
 
-        // 3. Product ကို update လုပ်မယ်
         transaction.update(productRef, {
-          averageRating: Math.round(newAvg * 10) / 10, // ဒဿမတစ်နေရာထိ
+          averageRating: Math.round(newAvg * 10) / 10,
           totalReviews: newTotal
         });
       });
 
-      // ✅ Review ကို save လုပ်မယ်
       await addDoc(collection(db, 'reviews'), {
         productId,
         buyerId: user.uid,
@@ -170,11 +164,22 @@ export default function ReviewForm({
           <label style={{ color: 'var(--text-secondary)', fontSize: '14px', display: 'block', marginBottom: '8px' }}>
             {labelRating}
           </label>
+          {/* ✅ StarRating - readonly မပါဘဲ သုံးထားတယ် */}
           <StarRating
             rating={rating}
-            onRatingChange={setRating}
+            onRatingChange={(value) => {
+              console.log('⭐ Rating changed to:', value);
+              setRating(value);
+            }}
             size={32}
           />
+          <div style={{ 
+            color: 'var(--text-secondary)', 
+            fontSize: '12px', 
+            marginTop: '4px' 
+          }}>
+            {rating > 0 ? `Selected: ${rating} star${rating !== 1 ? 's' : ''}` : 'Tap a star to rate'}
+          </div>
         </div>
 
         <div style={{ marginBottom: '20px' }}>

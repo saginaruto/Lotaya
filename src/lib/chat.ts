@@ -407,3 +407,50 @@ export const listenChatRoomWithUnread = (chatId: string, userId: string, callbac
     callback(messages, unreadCount);
   });
 };
+
+// ✅ Typing Status ကို Firestore မှာ သိမ်းမယ်
+export const setTypingStatus = async (chatId: string, userId: string, isTyping: boolean) => {
+  try {
+    const chatRef = doc(db, 'chats', chatId);
+    await updateDoc(chatRef, {
+      [`typing.${userId}`]: isTyping ? serverTimestamp() : null
+    });
+  } catch (error) {
+    console.error('Error setting typing status:', error);
+  }
+};
+
+// ✅ တစ်ဖက်လူရဲ့ Typing Status ကို နားထောင်မယ်
+export const listenTypingStatus = (
+  chatId: string, 
+  currentUserId: string,
+  callback: (isTyping: boolean, userId: string) => void
+) => {
+  const chatRef = doc(db, 'chats', chatId);
+  
+  return onSnapshot(chatRef, (doc) => {
+    if (doc.exists()) {
+      const data = doc.data();
+      const typing = data.typing || {};
+      
+      const typingUsers = Object.keys(typing).filter(
+        (userId) => userId !== currentUserId && typing[userId] !== null
+      );
+      
+      if (typingUsers.length > 0) {
+        const typingUserId = typingUsers[0];
+        const typingTime = typing[typingUserId]?.toDate?.() || new Date();
+        const now = new Date();
+        const diff = (now.getTime() - typingTime.getTime()) / 1000;
+        
+        if (diff < 5) {
+          callback(true, typingUserId);
+        } else {
+          callback(false, '');
+        }
+      } else {
+        callback(false, '');
+      }
+    }
+  });
+};

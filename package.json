@@ -12,6 +12,7 @@
     "@dataconnect/generated": "file:src/dataconnect-generated",
     "cloudinary": "^2.11.0",
     "clsx": "^2.1.1",
+    "emoji-picker-react": "^4.20.1",
     "firebase": "^12.17.0",
     "firebase-admin": "^14.3.0",
     "html2canvas": "^1.4.1",

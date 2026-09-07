@@ -3,10 +3,12 @@
 import { Fragment, useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { listenChatRoom, sendMessage, markMessagesAsRead } from '@/lib/chat';
-import { Send, ArrowLeft, PackagePlus, Trash2, Plus, Image as ImageIcon, Camera, X } from 'lucide-react';
 import { doc, getDoc, collection, addDoc, serverTimestamp, updateDoc, query, where, getDocs, runTransaction, increment, setDoc } from 'firebase/firestore';
 import { getNextReceiptNumber } from '@/lib/ReceiptNumber';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { Send, ArrowLeft, PackagePlus, Trash2, Plus, Image as ImageIcon, Camera, X, Smile } from 'lucide-react';
+import EmojiButton from './EmojiButton';
+import { useTyping } from '@/hooks/useTyping';
 
 interface ChatRoomProps {
   chatId: string;
@@ -170,6 +172,11 @@ export default function ChatRoom({
   const [orderError, setOrderError] = useState('');
   const [isReceiptFullscreen, setIsReceiptFullscreen] = useState(false);
   const [receiptOrder, setReceiptOrder] = useState<any>(null);
+
+  const { isTyping, typingUserId, startTyping, stopTyping } = useTyping({
+    chatId,
+    enabled: !!chatId && !!activeUserId
+  });
 
   // 1. Setup & Fetch Chat Info
   useEffect(() => {
@@ -1169,6 +1176,51 @@ export default function ChatRoom({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* ✅ Typing Indicator */}
+      {isTyping && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 16px',
+          alignSelf: 'flex-start',
+          color: 'var(--text-muted)',
+          fontSize: '13px'
+        }}>
+          <div style={{
+            display: 'flex',
+            gap: '4px',
+            alignItems: 'center'
+          }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              backgroundColor: 'var(--text-muted)',
+              borderRadius: '50%',
+              animation: 'typingDot 1.4s ease-in-out infinite',
+              animationDelay: '0s'
+            }} />
+            <span style={{
+              width: '8px',
+              height: '8px',
+              backgroundColor: 'var(--text-muted)',
+              borderRadius: '50%',
+              animation: 'typingDot 1.4s ease-in-out infinite',
+              animationDelay: '0.2s'
+            }} />
+            <span style={{
+              width: '8px',
+              height: '8px',
+              backgroundColor: 'var(--text-muted)',
+              borderRadius: '50%',
+              animation: 'typingDot 1.4s ease-in-out infinite',
+              animationDelay: '0.4s'
+            }} />
+          </div>
+          <span>typing...</span>
+        </div>
+      )}
+
       {/* INPUT */}
       <div style={{ 
         padding: '12px 16px', 
@@ -1179,6 +1231,13 @@ export default function ChatRoom({
         alignItems: 'center' 
       }}>
         
+        {/* ✅ Emoji Button */}
+        <EmojiButton 
+          onEmojiSelect={(emoji) => {
+            setNewMessage(prev => prev + emoji);
+          }} 
+        />
+
         {/* Plus Button - Image Upload (Gallery + Camera) */}
         <label
           style={{
@@ -1217,8 +1276,19 @@ export default function ChatRoom({
 
         <input
           value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          onChange={(e) => {
+            setNewMessage(e.target.value);
+            startTyping();
+          }}
+          onBlur={() => {
+            stopTyping();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              stopTyping();
+              handleSend();
+            }
+          }}
           placeholder="Type a message..."
           style={{
             flex: 1,
@@ -1655,6 +1725,29 @@ export default function ChatRoom({
           />
         </div>
       )}
+
+      <style>{`
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      @keyframes marquee {
+        0% { transform: translateX(0%); }
+        100% { transform: translateX(-100%); }
+      }
+      
+      @keyframes typingDot {
+        0%, 60%, 100% {
+          transform: translateY(0);
+          opacity: 0.4;
+        }
+        30% {
+          transform: translateY(-8px);
+          opacity: 1;
+        }
+      }
+    `}</style>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { useLanguage } from '@/components/LanguageProvider';
 import { getChatRoom, createChatId } from '@/lib/chat';
 import { useWishlist } from '@/context/WishlistContext';
 import ReviewForm from './ReviewForm';
+import StarRating from './StarRating';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -41,7 +42,6 @@ export default function ProductDetailModal({
 
   const lastTapRef = useRef<number>(0);
 
-  // ✅ Product ကို Refresh လုပ်မယ်
   const refreshProduct = async () => {
     if (!product?.id) return;
     try {
@@ -55,12 +55,10 @@ export default function ProductDetailModal({
     }
   };
 
-  // ✅ initialProduct ပြောင်းရင် product ကိုလည်း update လုပ်မယ်
   useEffect(() => {
     setProduct(initialProduct);
   }, [initialProduct]);
 
-  // ✅ Modal ဖွင့်တိုင်း Product Data ကို Refresh လုပ်မယ်
   useEffect(() => {
     if (isOpen && product?.id) {
       refreshProduct();
@@ -169,19 +167,18 @@ export default function ProductDetailModal({
     }
   };
 
-  // ✅ Review Form ဖွင့်တဲ့ function - ရောင်းသူဆိုရင် ပိတ်မယ်
   const handleOpenReviewForm = () => {
-    // ✅ ရောင်းသူဆိုရင် မဖွင့်ပါနဲ့
-    if (userRole === 'seller') {
-      alert('Sellers cannot write reviews for their own products');
-      return;
-    }
-    
     if (!currentUser) {
       alert('Please login to write a review');
       router.push('/login');
       return;
     }
+    
+    if (userRole === 'seller') {
+      alert('Sellers cannot write reviews for their own products');
+      return;
+    }
+    
     setShowReviewForm(true);
   };
 
@@ -429,6 +426,7 @@ export default function ProductDetailModal({
               >
                 {product.brand}
               </h2>
+              
               <h3
                 style={{
                   fontSize: "15px",
@@ -441,26 +439,69 @@ export default function ProductDetailModal({
                 {product.title}
               </h3>
 
-              {/* ✅ ⭐ Reviews - ဝယ်သူမှာပဲ နှိပ်လို့ရမယ် */}
+              {/* ✅ ⭐ Reviews + Write a Review - တစ်တန်းတည်း */}
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "6px",
-                  marginTop: "2px",
-                  marginBottom: "4px",
-                  cursor: isBuyer ? "pointer" : "default"
+                  gap: "10px",
+                  marginTop: "6px",
+                  marginBottom: "8px",
+                  flexWrap: "wrap"
                 }}
-                onClick={isBuyer ? handleOpenReviewForm : undefined}
               >
-                <Star size={15} style={{ color: "#F59E0B", fill: "#F59E0B" }} />
-                <span style={{
-                  color: "var(--text-secondary)",
-                  fontSize: "14px",
-                  fontWeight: "500"
-                }}>
-                  {product.averageRating || 0} ({product.totalReviews || 0})
-                </span>                
+                {/* ⭐ Reviews - ကြယ် + နံပါတ် */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "default"
+                  }}
+                >
+                  <StarRating 
+                    rating={product.averageRating || 0} 
+                    readonly={true} 
+                    size={14} 
+                  />
+                  <span style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "14px",
+                    fontWeight: "500"
+                  }}>
+                    {product.averageRating || 0} ({product.totalReviews || 0})
+                  </span>
+                </div>
+
+                {/* ✅ Write a Review - Text Only, Twinkle */}
+                {isBuyer && (
+                  <span
+                    onClick={handleOpenReviewForm}
+                    style={{
+                      color: "var(--accent)",
+                      fontSize: "13px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      display: "inline-block",
+                      animation: "twinkle 5s ease-in-out infinite",
+                      textDecoration: "none",
+                      border: "none",
+                      background: "transparent",
+                      padding: "0",
+                      margin: "0"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.animation = "none";
+                      e.currentTarget.style.textShadow = "0 0 8px rgba(56, 189, 248, 0.5)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.animation = "twinkle 5s ease-in-out infinite";
+                      e.currentTarget.style.textShadow = "none";
+                    }}
+                  >
+                    Review
+                  </span>
+                )}
               </div>
 
               <div
@@ -546,7 +587,6 @@ export default function ProductDetailModal({
         )}
       </div>
 
-      {/* ✅ Review Form - ဝယ်သူမှာပဲပြမယ် */}
       {showReviewForm && isBuyer && (
         <ReviewForm
           productId={product.id}
@@ -565,11 +605,16 @@ export default function ProductDetailModal({
         }
         
         @keyframes marquee {
-          0% {
-            transform: translateX(0%);
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-100%); }
+        }
+        
+        @keyframes twinkle {
+          0%, 100% {
+            opacity: 1;
           }
-          100% {
-            transform: translateX(-100%);
+          50% {
+            opacity: 0;
           }
         }
       `}</style>

@@ -28,9 +28,6 @@ export default function CategoryAds({
   const [randomAdsMap, setRandomAdsMap] = useState<Record<string, AdItem[]>>({});
   const [isRandomized, setIsRandomized] = useState(false);
 
-  // ✅ Product Ratings ကို သိမ်းထားမယ်
-  const [productRatings, setProductRatings] = useState<Record<string, { averageRating: number; totalReviews: number }>>({});
-
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -51,44 +48,6 @@ export default function CategoryAds({
     });
     return grouped;
   };
-
-  // ✅ Products ကို Real-time နားထောင်ပြီး productRatings ကို Update လုပ်မယ်
-  useEffect(() => {
-    const unsubscribeProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
-      const ratings: Record<string, { averageRating: number; totalReviews: number }> = {};
-      snapshot.docs.forEach((doc) => {
-        const data = doc.data();
-        ratings[doc.id] = {
-          averageRating: data.averageRating || 0,
-          totalReviews: data.totalReviews || 0
-        };
-      });
-      setProductRatings(ratings);
-      console.log('🔄 Product ratings updated:', Object.keys(ratings).length);
-    });
-
-    return () => unsubscribeProducts();
-  }, []);
-
-  // ✅ productRatings ပြောင်းတိုင်း randomAdsMap ကို Update လုပ်မယ်
-  useEffect(() => {
-    if (Object.keys(productRatings).length === 0) return;
-
-    setRandomAdsMap((prevMap) => {
-      const newMap: Record<string, AdItem[]> = {};
-      Object.keys(prevMap).forEach((category) => {
-        newMap[category] = prevMap[category].map((ad) => {
-          const ratings = productRatings[ad.id];
-          return {
-            ...ad,
-            averageRating: ratings?.averageRating || 0,
-            totalReviews: ratings?.totalReviews || 0
-          };
-        });
-      });
-      return newMap;
-    });
-  }, [productRatings]);
 
   const getCachedRandomData = () => {
     try {
@@ -126,7 +85,6 @@ export default function CategoryAds({
       
       if (cached) {
         setRandomCategoryNames(cached.categoryNames);
-        // ✅ Cached Data ကို သိမ်းပေမယ့် productRatings က Update လုပ်မယ်
         setRandomAdsMap(cached.adsMap);
         setIsRandomized(true);
         setLoading(false);
@@ -240,18 +198,6 @@ export default function CategoryAds({
     return ads;
   };
 
-  // ✅ adsList ကို ပြင်ဆင်တဲ့အခါ productRatings ကိုသုံးမယ်
-  const getAdsWithRatings = (ads: AdItem[]): AdItem[] => {
-    return ads.map((ad) => {
-      const ratings = productRatings[ad.id];
-      return {
-        ...ad,
-        averageRating: ratings?.averageRating || 0,
-        totalReviews: ratings?.totalReviews || 0
-      };
-    });
-  };
-
   return (
     <div style={{ 
       padding: "16px 16px 40px 16px",
@@ -259,7 +205,7 @@ export default function CategoryAds({
       flexShrink: 0
     }}>
       {categoryNames.map((categoryName) => {
-        const adsList = getAdsWithRatings(getFilteredCategoryAds(categoryName));
+        const adsList = getFilteredCategoryAds(categoryName);
         if (adsList.length === 0) return null;
 
         return (
@@ -429,38 +375,6 @@ export default function CategoryAds({
                         >
                           {ad.price} MMK
                         </span>
-
-                        {/* ✅ ⭐ Reviews - ညာဘက်အောက်ထောင့်မှာ */}
-                        <div
-                          style={{
-                            position: "absolute",
-                            bottom: "6px",
-                            right: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            backgroundColor: "rgba(0,0,0,0.6)",
-                            padding: "2px 8px",
-                            borderRadius: "10px",
-                            backdropFilter: "blur(4px)"
-                          }}
-                        >
-                          <span style={{ fontSize: "10px", color: "#F59E0B" }}>⭐</span>
-                          <span style={{
-                            fontSize: "10px",
-                            fontWeight: "600",
-                            color: "#ffffff"
-                          }}>
-                            {ad.averageRating || 0}
-                          </span>
-                          <span style={{
-                            fontSize: "10px",
-                            fontWeight: "400",
-                            color: "rgba(255,255,255,0.6)"
-                          }}>
-                            ({ad.totalReviews || 0})
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>

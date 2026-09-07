@@ -4,125 +4,98 @@ Digital Shop
 
 DSAING/
 .
-├── README.md
-├── cors.json
-├── dataconnect
-│   ├── dataconnect.yaml
-│   ├── example
-│   │   ├── connector.yaml
-│   │   ├── mutations.gql
-│   │   └── queries.gql
-│   ├── schema
-│   │   └── schema.gql
-│   └── seed_data.gql
-├── firebase.json
-├── firestore.rules
-├── next-env.d.ts
-├── next.config.js
-├── package-lock.json
-├── package.json
-├── public
-│   ├── icons
-│   │   ├── app-icon.svg
-│   │   ├── icon-192x192.png
-│   │   ├── icon-512x512.png
-│   │   └── logo.svg
-│   ├── index.html
-│   ├── logo.png
-│   ├── manifest.json
-│   ├── screenshots
-│   │   ├── desktop-home.jpg
-│   │   └── mobile-home.jpg
-│   ├── sounds
-│   │   └── notification.mp3
-│   └── sw.js
-├── src
-│   ├── app
-│   │   ├── chat
-│   │   │   ├── [chatId]
-│   │   │   │   └── page.tsx
-│   │   │   └── page.tsx
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   ├── login
-│   │   │   └── page.tsx
-│   │   ├── page.tsx
-│   │   ├── profile
-│   │   │   └── page.tsx
-│   │   ├── seller
-│   │   │   ├── dashboard
-│   │   │   │   └── page.tsx
-│   │   │   ├── orders
-│   │   │   │   └── page.tsx
-│   │   │   ├── products
-│   │   │   │   ├── new
-│   │   │   │   │   └── page.tsx
-│   │   │   │   └── page.tsx
-│   │   │   ├── sales-report
-│   │   │   │   └── page.tsx
-│   │   │   └── settings
-│   │   │       └── page.tsx
-│   │   ├── settings
-│   │   │   └── page.tsx
-│   │   ├── shop
-│   │   │   └── [sellerId]
-│   │   │       └── page.tsx
-│   │   └── signup
-│   │       └── page.tsx
-│   ├── components
-│   │   ├── BannerSlider.tsx
-│   │   ├── CartSidebar.tsx
-│   │   ├── CategoryAds.tsx
-│   │   ├── ChatList.tsx
-│   │   ├── ChatModal.tsx
-│   │   ├── ChatRoom.tsx
-│   │   ├── Header.tsx
-│   │   ├── LanguageProvider.tsx
-│   │   ├── LocationModal.tsx
-│   │   ├── NotificationProvider.tsx
-│   │   ├── NotificationToggle.tsx
-│   │   ├── ProductDetailModal.tsx
-│   │   ├── SearchResults.tsx
-│   │   ├── Sidebar.tsx
-│   │   ├── SplashScreen.tsx
-│   │   └── ToastNotification.tsx
-│   ├── data
-│   │   ├── Ads.ts
-│   │   ├── banners.ts
-│   │   ├── categories.ts
-│   │   ├── categoryAds.ts
-│   │   └── cities.ts
-│   ├── dataconnect-generated
-│   │   ├── README.md
-│   │   ├── esm
-│   │   │   ├── index.esm.js
-│   │   │   └── package.json
-│   │   ├── index.cjs.js
-│   │   ├── index.d.ts
-│   │   ├── package.json
-│   │   └── react
-│   │       ├── README.md
-│   │       ├── esm
-│   │       │   ├── index.esm.js
-│   │       │   └── package.json
-│   │       ├── index.cjs.js
-│   │       ├── index.d.ts
-│   │       └── package.json
-│   ├── hooks
-│   │   ├── useAutoSlide.ts
-│   │   └── useNotifications.ts
-│   ├── lib
-│   │   ├── ReceiptNumber.ts
-│   │   ├── chat.ts
-│   │   ├── cloudinary.ts
-│   │   ├── firebase.ts
-│   │   └── translations.ts
-│   ├── next-env.d.ts
-│   ├── styles
-│   │   └── menuButtonStyle.ts
-│   └── types
-│       └── index.ts
-├── tsconfig.json
-└── tsconfig.tsbuildinfo
-
-35 directories, 86 files
+name -h
+[4.0K]  .
+├── [4.0K]  README.md
+├── [ 114]  cors.json
+├── [4.0K]  dataconnect
+│   ├── [ 456]  dataconnect.yaml
+│   ├── [4.0K]  example
+│   │   ├── [ 226]  connector.yaml
+│   │   ├── [1.2K]  mutations.gql
+│   │   └── [1.8K]  queries.gql
+│   ├── [4.0K]  schema
+│   │   └── [1.9K]  schema.gql
+│   └── [ 13K]  seed_data.gql
+├── [  56]  firebase.json
+├── [ 161]  firestore.rules
+├── [ 296]  next-env.d.ts
+├── [1.2K]  next.config.js
+├── [361K]  package-lock.json
+├── [ 801]  package.json
+├── [4.0K]  public
+│   ├── [4.4K]  firebase-messaging-sw.js
+│   ├── [4.0K]  icons
+│   │   ├── [ 11K]  app-icon.svg
+│   │   ├── [ 32K]  icon-192x192.png
+│   │   ├── [140K]  icon-512x512.png
+│   │   └── [ 11K]  logo.svg
+│   ├── [3.4K]  index.html
+│   ├── [ 78K]  logo.png
+│   ├── [1.1K]  manifest.json
+│   ├── [4.0K]  screenshots
+│   │   ├── [139K]  desktop-home.jpg
+│   │   └── [158K]  mobile-home.jpg
+│   └── [4.0K]  sounds
+│       └── [   0]  notification.mp3
+├── [4.0K]  src
+│   ├── [4.0K]  app
+│   │   ├── [3.1K]  globals.css
+│   │   ├── [4.9K]  layout.tsx
+│   │   └── [ 17K]  page.tsx
+│   ├── [4.0K]  components
+│   │   ├── [5.5K]  BannerSlider.tsx
+│   │   ├── [ 11K]  CartSidebar.tsx
+│   │   ├── [ 13K]  CategoryAds.tsx
+│   │   ├── [8.7K]  ChatList.tsx
+│   │   ├── [ 12K]  ChatModal.tsx
+│   │   ├── [ 66K]  ChatRoom.tsx
+│   │   ├── [1.5K]  EmojiButton.tsx
+│   │   ├── [1.6K]  EmojiPicker.tsx
+│   │   ├── [9.9K]  Header.tsx
+│   │   ├── [ 18K]  LanguageProvider.tsx
+│   │   ├── [6.3K]  LocationModal.tsx
+│   │   ├── [2.4K]  NotificationProvider.tsx
+│   │   ├── [4.8K]  NotificationToggle.tsx
+│   │   ├── [ 17K]  ProductDetailModal.tsx
+│   │   ├── [7.5K]  ReviewForm.tsx
+│   │   ├── [5.4K]  ReviewsList.tsx
+│   │   ├── [5.5K]  SearchResults.tsx
+│   │   ├── [4.1K]  SessionLockModal.tsx
+│   │   ├── [ 19K]  Sidebar.tsx
+│   │   ├── [4.0K]  SplashScreen.tsx
+│   │   ├── [3.5K]  StarRating.tsx
+│   │   ├── [1007]  ThemeProvider.tsx
+│   │   ├── [1.1K]  ThemeToggle.tsx
+│   │   └── [2.4K]  ToastNotification.tsx
+│   ├── [4.0K]  context
+│   │   ├── [2.6K]  SessionContext.tsx
+│   │   ├── [1.8K]  ThemeContext.tsx
+│   │   └── [2.8K]  WishlistContext.tsx
+│   ├── [4.0K]  data
+│   │   ├── [5.8K]  Ads.ts
+│   │   ├── [3.9K]  banners.ts
+│   │   ├── [ 193]  categories.ts
+│   │   ├── [4.5K]  categoryAds.ts
+│   │   └── [ 31K]  cities.ts
+│   ├── [4.0K]  dataconnect-generated
+│   │   ├── [ 40K]  README.md
+│   │   ├── [5.8K]  index.cjs.js
+│   │   ├── [8.2K]  index.d.ts
+│   │   └── [ 853]  package.json
+│   ├── [4.0K]  hooks
+│   │   ├── [2.1K]  useAutoSlide.ts
+│   │   └── [1.7K]  useNotifications.ts
+│   ├── [4.0K]  lib
+│   │   ├── [ 937]  ReceiptNumber.ts
+│   │   ├── [ 13K]  chat.ts
+│   │   ├── [ 710]  cloudinary.ts
+│   │   ├── [6.1K]  firebase.ts
+│   │   └── [ 12K]  translations.ts
+│   ├── [ 221]  next-env.d.ts
+│   ├── [4.0K]  styles
+│   │   └── [ 365]  menuButtonStyle.ts
+│   └── [4.0K]  types
+│       └── [2.7K]  index.ts
+├── [ 735]  tsconfig.json
+└── [137K]  tsconfig.tsbuildinfo
