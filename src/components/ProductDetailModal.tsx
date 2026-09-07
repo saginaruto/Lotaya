@@ -60,6 +60,13 @@ export default function ProductDetailModal({
     setProduct(initialProduct);
   }, [initialProduct]);
 
+  // ✅ Modal ဖွင့်တိုင်း Product Data ကို Refresh လုပ်မယ်
+  useEffect(() => {
+    if (isOpen && product?.id) {
+      refreshProduct();
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -162,7 +169,14 @@ export default function ProductDetailModal({
     }
   };
 
+  // ✅ Review Form ဖွင့်တဲ့ function - ရောင်းသူဆိုရင် ပိတ်မယ်
   const handleOpenReviewForm = () => {
+    // ✅ ရောင်းသူဆိုရင် မဖွင့်ပါနဲ့
+    if (userRole === 'seller') {
+      alert('Sellers cannot write reviews for their own products');
+      return;
+    }
+    
     if (!currentUser) {
       alert('Please login to write a review');
       router.push('/login');
@@ -427,7 +441,7 @@ export default function ProductDetailModal({
                 {product.title}
               </h3>
 
-              {/* ✅ ⭐ Reviews - Product Title နဲ့ Price ကြားထဲမှာ */}
+              {/* ✅ ⭐ Reviews - ဝယ်သူမှာပဲ နှိပ်လို့ရမယ် */}
               <div
                 style={{
                   display: "flex",
@@ -435,9 +449,9 @@ export default function ProductDetailModal({
                   gap: "6px",
                   marginTop: "2px",
                   marginBottom: "4px",
-                  cursor: "pointer"
+                  cursor: isBuyer ? "pointer" : "default"
                 }}
-                onClick={handleOpenReviewForm}
+                onClick={isBuyer ? handleOpenReviewForm : undefined}
               >
                 <Star size={15} style={{ color: "#F59E0B", fill: "#F59E0B" }} />
                 <span style={{
@@ -449,7 +463,6 @@ export default function ProductDetailModal({
                 </span>                
               </div>
 
-              {/* Price */}
               <div
                 style={{
                   fontSize: "15px",
@@ -533,14 +546,14 @@ export default function ProductDetailModal({
         )}
       </div>
 
-      {/* ✅ Review Form - onSuccess မှာ refreshProduct ကိုခေါ်မယ် */}
-      {showReviewForm && (
+      {/* ✅ Review Form - ဝယ်သူမှာပဲပြမယ် */}
+      {showReviewForm && isBuyer && (
         <ReviewForm
           productId={product.id}
           onClose={() => setShowReviewForm(false)}
           onSuccess={() => {
             setShowReviewForm(false);
-            refreshProduct(); // ✅ Product Data ကို Refresh လုပ်မယ်
+            refreshProduct();
           }}
         />
       )}
