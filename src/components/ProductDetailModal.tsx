@@ -5,13 +5,14 @@ import { X, MapPin, MessageCircle, Phone, Heart, Star } from "lucide-react";
 import { useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/components/LanguageProvider';
 import { getChatRoom, createChatId } from '@/lib/chat';
 import { useWishlist } from '@/context/WishlistContext';
 import ReviewForm from './ReviewForm';
 import StarRating from './StarRating';
+import { increment } from 'firebase/firestore';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -54,6 +55,20 @@ export default function ProductDetailModal({
       console.error('Error refreshing product:', error);
     }
   };
+
+  useEffect(() => {
+    if (!product?.id) return;
+
+    // ✅ Product Views ကို တစ်ခါပဲတိုးမယ် (sessionStorage နဲ့စစ်)
+    const viewedKey = `viewed_${product.id}`;
+    if (!sessionStorage.getItem(viewedKey)) {
+      const productRef = doc(db, 'products', product.id);
+      updateDoc(productRef, {
+        views: increment(1)
+      }).catch(err => console.error('Error updating views:', err));
+      sessionStorage.setItem(viewedKey, 'true');
+    }
+  }, [product?.id]);
 
   useEffect(() => {
     setProduct(initialProduct);

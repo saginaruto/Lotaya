@@ -2,42 +2,54 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { auth, requestFCMToken, listenForMessages } from '@/lib/firebase';
+import { auth, requestFCMToken, listenForMessages, db, serverTimestamp } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import './globals.css';
 import LanguageProvider, { Language } from '@/components/LanguageProvider';
 import ToastNotification from '@/components/ToastNotification';
 import { SessionProvider } from '@/context/SessionContext';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { WishlistProvider } from '@/context/WishlistContext'; // ✅ ထည့်ပါ
+import { WishlistProvider } from '@/context/WishlistContext';
+import { doc, updateDoc } from 'firebase/firestore';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // ✅ State တွေထည့်ပါ
   const [language, setLanguage] = useState<Language>('en');
+  const [toast, setToast] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState<{ title: string; body: string; senderName?: string } | null>(null);
 
-  // ✅ Theme ကို LocalStorage ကနေ ဖတ်ပြီး apply လုပ်မယ်
+  // ✅ Auth State & Notification Listener & Online Status & Heartbeat
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      document.documentElement.setAttribute('data-theme', savedTheme);
-    } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const defaultTheme = prefersDark ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', defaultTheme);
-      localStorage.setItem('theme', defaultTheme);
-    }
-  }, []);
+    let currentUserId: string | null = null;
+    let heartbeatInterval: NodeJS.Timeout | null = null; // Heartbeat Timer အတွက်
 
-  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // User ပြောင်းသွားရင် (သို့) Logout ဖြစ်ရင် အရင် Timer ကို ရှင်းလင်းပါ
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
+
       if (user) {
+        currentUserId = user.uid;
         try {
           setLanguage('en');
+
+          // 🛠️ 1. User ဝင်လာသည်နှင့် online: true လုပ်ရန်
+          await updateDoc(doc(db, 'users', user.uid), {
+            online: true,
+            lastSeen: serverTimestamp(),
+          });
+
+          // 🛠️ 2. Heartbeat: အပလီကေးရှင်းဖွင့်ထားစဉ် ၃၀ စက္ကန့်တစ်ကြိမ် lastSeen ကို update လုပ်နေမည်
+          heartbeatInterval = setInterval(async () => {
+            if (auth.currentUser) {
+              await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+                lastSeen: serverTimestamp(),
+                online: true,
+              }).catch(() => {});
+            }
+          }, 30000); // ၃၀ စက္ကန့် တစ်ကြိမ်
 
           try {
             await requestFCMToken(user.uid);
@@ -69,12 +81,38 @@ export default function RootLayout({
         } catch (error) {
           console.error('Error initializing notifications:', error);
         }
+      } else {
+        // User ထွက်သွား/Logout ဖြစ်သွားပါက
+        if (currentUserId) {
+          await updateDoc(doc(db, 'users', currentUserId), {
+            online: false,
+            lastSeen: serverTimestamp(),
+          }).catch(() => {});
+        }
       }
       setIsLoading(false);
     });
-    return () => unsubscribe();
+
+    // 🛠️ 3. Browser Tab ပိတ်လိုက် (သို့မဟုတ်) Website ကနေ ထွက်သွားချိန် online: false ဖြစ်ရန်
+    const handleBeforeUnload = () => {
+      if (auth.currentUser) {
+        updateDoc(doc(db, 'users', auth.currentUser.uid), {
+          online: false,
+          lastSeen: serverTimestamp(),
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      unsubscribe();
+      if (heartbeatInterval) clearInterval(heartbeatInterval); // Component unmount ဖြစ်ရင် timer ရှင်းရန်
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
+  // ✅ Service Worker Register
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -124,7 +162,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <SessionProvider>
-            <WishlistProvider>  {/* ✅ WishlistProvider ထည့်ပါ */}
+            <WishlistProvider>
               <LanguageProvider initialLanguage={language}>
                 {children}
                 {toast && (

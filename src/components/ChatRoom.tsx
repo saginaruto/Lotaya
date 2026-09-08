@@ -2,8 +2,8 @@
 
 import { Fragment, useState, useEffect, useRef } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { listenChatRoom, sendMessage, markMessagesAsRead } from '@/lib/chat';
-import { doc, getDoc, collection, addDoc, serverTimestamp, updateDoc, query, where, getDocs, runTransaction, increment, setDoc } from 'firebase/firestore';
+import { listenChatRoom, sendMessage, markMessagesAsRead, toggleMessageReaction, deleteMessage } from '@/lib/chat';
+import { doc, getDoc, collection, addDoc, serverTimestamp, updateDoc, query, where, getDocs, runTransaction, increment, setDoc, onSnapshot } from 'firebase/firestore';
 import { getNextReceiptNumber } from '@/lib/ReceiptNumber';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { Send, ArrowLeft, PackagePlus, Trash2, Plus, Image as ImageIcon, Camera, X, Smile } from 'lucide-react';
@@ -155,6 +155,7 @@ export default function ChatRoom({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const user = auth.currentUser;
   const activeUserId = propUserId || currentUserId || user?.uid || '';
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Order States
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -178,6 +179,87 @@ export default function ChatRoom({
     chatId,
     enabled: !!chatId && !!activeUserId
   });
+  const [replyTo, setReplyTo] = useState<any>(null); // ✅ Reply State
+  const messageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isReceiverOnline, setIsReceiverOnline] = useState<boolean>(false);
+
+  const [hasScrolledInitial, setHasScrolledInitial] = useState(false);
+  useEffect(() => {
+    if (messages.length > 0 && !hasScrolledInitial) {
+      scrollToBottom();
+      setHasScrolledInitial(true);
+    }
+  }, [messages, hasScrolledInitial]);
+  
+  // ✅ Reply ကိုနှိပ်ရင် မူရင်းစာကိုသွားမယ်
+  const scrollToMessage = (messageId: string) => {
+    const element = messageRefs.current[messageId];
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // ✅ ပေါ်လွင်အောင် Highlight လုပ်မယ်
+      element.style.transition = 'background-color 0.5s ease';
+      element.style.backgroundColor = 'var(--accent)';
+      setTimeout(() => {
+        element.style.backgroundColor = 'transparent';
+      }, 2000);
+    }
+  };
+
+  // ✅ Scroll to Bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // ===== ✅ Reaction Handler =====
+  const handleReaction = async (messageId: string, emoji: string) => {
+    if (!activeUserId || !chatId) return;
+    try {
+      await toggleMessageReaction(chatId, messageId, activeUserId, emoji);
+      console.log('✅ Reaction toggled:', emoji);
+    } catch (error) {
+      console.error('❌ Failed to toggle reaction:', error);
+    }
+  };
+
+  // ===== ✅ Delete Handler =====
+  const handleDeleteMessage = async (messageId: string, forEveryone: boolean = true) => {
+    if (!activeUserId || !chatId) return;
+    
+    // Delete confirmation
+    const confirmMsg = forEveryone 
+      ? 'Delete this message for everyone?' 
+      : 'Delete this message only for yourself?';
+    
+    if (!confirm(confirmMsg)) return;
+    
+    try {
+      await deleteMessage(chatId, messageId, activeUserId, forEveryone);
+      console.log('✅ Message deleted:', messageId);
+    } catch (error) {
+      console.error('❌ Failed to delete message:', error);
+      alert('You can only delete your own messages.');
+    }
+  };
+  // ✅ Scroll Button Show/Hide
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      setShowScrollButton(!isNearBottom);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    
+    // Initial check
+    handleScroll();
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   // 1. Setup & Fetch Chat Info
   useEffect(() => {
@@ -221,6 +303,35 @@ export default function ChatRoom({
   }, [chatId, currentUserId]);
 
   useEffect(() => {
+    if (!receiverId) return;
+
+    const unsubscribeUser = onSnapshot(doc(db, 'users', receiverId), (userSnap) => {
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        
+        const isOnlineFlag = data.online === true;
+        
+        // 🛠️ lastSeen အချိန်ကို စစ်ဆေးခြင်း (လွန်ခဲ့တဲ့ စက္ကန့် ၆၀ အတွင်း update ဖြစ်ထားမှ အမှန်တကယ် Online ဖြစ်သည်)
+        let isRecentlyActive = false;
+        if (data.lastSeen) {
+          const lastSeenDate = typeof data.lastSeen.toDate === 'function' 
+            ? data.lastSeen.toDate() 
+            : new Date(data.lastSeen);
+          
+          const diffInSeconds = (new Date().getTime() - lastSeenDate.getTime()) / 1000;
+          // လွန်ခဲ့တဲ့ ၆၀ စက္ကန့် (၁ မိနစ်) အတွင်း ဖြစ်မှ Online ပြမည်
+          isRecentlyActive = diffInSeconds < 60;
+        }
+
+        // Flag ရော အချိန်ရော နှစ်ခုစလုံး မှန်မှ Online ပြမည်
+        setIsReceiverOnline(isOnlineFlag && isRecentlyActive); 
+      }
+    });
+
+    return () => unsubscribeUser();
+  }, [receiverId]);
+
+  useEffect(() => {
     if (!activeUserId || !chatId) return;
     const unsubscribe = listenChatRoom(chatId, async (msgs) => {
       const refreshedMessages = await Promise.all(msgs.map(async (msg: any) => {
@@ -249,20 +360,28 @@ export default function ChatRoom({
       markMessagesAsRead(chatId, activeUserId);
     });
     return () => unsubscribe();
-  }, [chatId, activeUserId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
+  }, [chatId, activeUserId]);  
+  
   // 2. Send Text
-  const handleSend = async () => {
+    const handleSend = async () => {
     if (!newMessage.trim() || !activeUserId || !receiverId || sending) return;
     setSending(true);
     try {
-      await sendMessage(chatId, activeUserId, receiverId, newMessage.trim());
+      await sendMessage(
+        chatId, 
+        activeUserId, 
+        receiverId, 
+        newMessage.trim(),
+        replyTo // ✅ Reply Data
+      );
       setNewMessage('');
+      setReplyTo(null); // ✅ Reply ပြီးရင် ဖျက်မယ်
     } catch (e) { console.error(e); } finally { setSending(false); }
+  };
+
+  // ✅ Cancel Reply
+  const cancelReply = () => {
+    setReplyTo(null);
   };
 
   // 3. Image Upload
@@ -653,6 +772,32 @@ export default function ChatRoom({
         });
       }
 
+      // ✅ Product ရဲ့ totalSales နဲ့ totalRevenue ကိုတိုးမယ်
+      const order = selectedOrder.orderData || {}; // ✅ ဒီလိုင်းထည့်ပါ
+      for (const item of order.items || []) {      // ✅ order → orderData ကနေယူမယ်
+        if (item.productId) {
+          const productRef = doc(db, 'products', item.productId);
+          await updateDoc(productRef, {
+            totalSales: increment(item.quantity || 1),
+            totalRevenue: increment(item.total || 0),
+          });
+        }
+      }
+
+      // ✅ ဒီနေရာမှာ orderData ကို update လုပ်တာရှိရင် ဆက်လုပ်ပါ
+      if (chatId && selectedOrder.id) {
+        await updateDoc(doc(db, 'chats', chatId, 'messages', selectedOrder.id), {
+          orderData: {
+            ...updatedOrderData,
+            customerPhone: currentPhone,
+            deliveryAddress: currentAddress,
+            paymentMethod: currentPayment,
+            receiptNumber: existingReceiptNumber,
+            receiptYear: receiptYear,
+          },
+        });
+      }
+
       setBuyerPhone('');
       setBuyerAddress('');
       setBuyerPaymentMethod('');
@@ -721,13 +866,18 @@ export default function ChatRoom({
             <div style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{receiverName || 'Loading...'}</div>
             <div style={{ 
               fontSize: '11px', 
-              color: receiverRole === 'seller' ? '#FFD700' : '#4ade80', 
+              color: isReceiverOnline ? '#4ade80' : '#9ca3af', // Online ဆိုရင် အစိမ်းရောင်၊ Offline ဆိုရင် မီးခိုးရောင်
               display: 'flex', 
               alignItems: 'center', 
               gap: '4px' 
             }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: receiverRole === 'seller' ? '#FFD700' : '#4ade80' }}></span>
-              {receiverRole === 'seller' ? '🛒 Seller' : 'Buyer'}
+              <span style={{ 
+                width: '6px', 
+                height: '6px', 
+                borderRadius: '50%', 
+                backgroundColor: isReceiverOnline ? '#4ade80' : '#9ca3af' // အစက်အရောင်
+              }}></span>
+              {receiverRole === 'seller' ? '🛒 Seller' : 'Buyer'} • {isReceiverOnline ? 'Online' : 'Offline'}
             </div>
           </div>
         </div>
@@ -754,414 +904,494 @@ export default function ChatRoom({
       </div>
 
       {/* MESSAGES LIST */}
-        <div style={{ 
+      <div 
+        ref={scrollContainerRef}
+        style={{ 
           flex: 1, 
           overflowY: 'auto', 
           padding: '16px', 
           display: 'flex', 
           flexDirection: 'column',
-          backgroundColor: 'var(--background)'
-        }}>
-          {messages.map((msg, index) => {
-            const isOwn = String(msg.senderId || '').trim() === String(activeUserId).trim();
-            const messageDate = formatMessageDate(msg.timestamp);
-            const previousMessageDate = index > 0 ? formatMessageDate(messages[index - 1].timestamp) : null;
-            const showDateDivider = messageDate && messageDate !== previousMessageDate;
-            const messageTime = formatMessageTime(msg.timestamp);
-            
-            const isOrder = msg.type === 'order' || (msg.orderData && msg.orderData.items);
-            const isImage = msg.type === 'image' || (msg.image && typeof msg.image === 'string' && msg.image.length > 0);
+          backgroundColor: 'var(--background)',
+          position: 'relative', //
+        }}
+      >
+        {messages.map((msg, index) => {
+          const isOwn = String(msg.senderId || '').trim() === String(activeUserId).trim();
+          const messageDate = formatMessageDate(msg.timestamp);
+          const previousMessageDate = index > 0 ? formatMessageDate(messages[index - 1].timestamp) : null;
+          const showDateDivider = messageDate && messageDate !== previousMessageDate;
+          const messageTime = formatMessageTime(msg.timestamp);
+          
+          const isOrder = msg.type === 'order' || (msg.orderData && msg.orderData.items);
+          const isImage = msg.type === 'image' || (msg.image && typeof msg.image === 'string' && msg.image.length > 0);
 
-            // ----- IMAGE MESSAGE -----
-            if (isImage) {
-              return (
-                <Fragment key={msg.id}>
-                  {showDateDivider && (
-                    <div style={{ 
-                      alignSelf: 'center', 
-                      color: 'var(--text-muted)', 
-                      fontSize: '11px', 
-                      margin: '8px 0 12px', 
-                      textAlign: 'center' 
-                    }}>
-                      {messageDate}
-                    </div>
-                  )}
+          // ----- IMAGE MESSAGE -----
+          if (isImage) {
+            return (
+              <Fragment key={msg.id}>
+                {showDateDivider && (
                   <div style={{ 
+                    alignSelf: 'center', 
+                    color: 'var(--text-muted)', 
+                    fontSize: '11px', 
+                    margin: '8px 0 12px', 
+                    textAlign: 'center' 
+                  }}>
+                    {messageDate}
+                  </div>
+                )}
+                <div
+                  id={`msg-${msg.id}`}  // ✅ ဒီမှာ id ထည့်ပါ
+                  style={{ 
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: isOwn ? 'flex-end' : 'flex-start', 
                     marginBottom: '12px', 
                     width: '100%' 
-                  }}>
+                  }}
+                >
+                  <div
+                    style={{
+                      backgroundColor: isOwn ? 'var(--accent)' : 'var(--card-background)',
+                      padding: '8px',
+                      borderRadius: isOwn ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+                      display: 'inline-block',
+                      maxWidth: '75%',
+                    }}
+                  >
+                    {msg.image ? (
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('🖼️ Image clicked:', msg.image);
+                          setFullscreenImage(msg.image);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <img
+                          src={msg.image}
+                          alt="Chat image"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '300px',
+                            borderRadius: '8px',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                          onError={(e) => {
+                            console.error('Image load error:', msg.image);
+                            (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ color: 'var(--text-muted)', padding: '8px' }}>Image not available</div>
+                    )}
+                    {messageTime && (
+                      <div style={{ 
+                        color: isOwn ? '#00000080' : 'var(--text-muted)', 
+                        fontSize: '10px', 
+                        marginTop: '4px', 
+                        textAlign: isOwn ? 'right' : 'left' 
+                      }}>
+                        {messageTime}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Fragment>
+            );
+          }
+
+          // ----- ORDER MESSAGE -----
+          if (isOrder) {
+            const order = msg.orderData || {};
+            const isBuyer = activeUserId === order.buyerId;
+            const isCancelled = order.status === 'CANCELLED';
+            const isConfirmed = order.status === 'CONFIRMED';
+
+            if (isConfirmed) {
+              return (
+                <Fragment key={msg.id}>
+                  {showDateDivider && <div style={{ alignSelf: 'center', color: 'var(--text-muted)', fontSize: '11px', margin: '8px 0 12px', textAlign: 'center' }}>{messageDate}</div>}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', marginBottom: '12px', width: '100%' }}>
                     <div
-                      style={{
-                        backgroundColor: isOwn ? 'var(--accent)' : 'var(--card-background)',
-                        padding: '8px',
-                        borderRadius: isOwn ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                        display: 'inline-block',
-                        maxWidth: '75%',
+                      role="button"
+                      tabIndex={0}
+                      aria-label="View receipt full screen"
+                      onClick={() => {
+                        setReceiptOrder(order);
+                        setIsReceiptFullscreen(true);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          setReceiptOrder(order);
+                          setIsReceiptFullscreen(true);
+                        }
+                      }}
+                      style={{ 
+                        backgroundColor: 'var(--card-background)', 
+                        border: '1px solid var(--card-border)', 
+                        borderRadius: '12px', 
+                        padding: '16px', 
+                        color: 'var(--foreground)', 
+                        maxWidth: '420px', 
+                        width: '100%', 
+                        maxHeight: 'min(620px, calc(100vh - 120px))', 
+                        overflowY: 'auto', 
+                        boxSizing: 'border-box', 
+                        fontSize: '12px', 
+                        cursor: 'zoom-in' 
                       }}
                     >
-                      {msg.image ? (
-                        <div
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('🖼️ Image clicked:', msg.image);
-                            setFullscreenImage(msg.image);
-                          }}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <img
-                            src={msg.image}
-                            alt="Chat image"
-                            style={{
-                              maxWidth: '100%',
-                              maxHeight: '300px',
-                              borderRadius: '8px',
-                              objectFit: 'cover',
-                              display: 'block',
-                            }}
-                            onError={(e) => {
-                              console.error('Image load error:', msg.image);
-                              (e.target as HTMLImageElement).src = '/placeholder-image.png';
-                            }}
-                          />
+                      {/* Receipt Content */}
+                      <div style={{ 
+                        borderBottom: '1px solid var(--card-border)', 
+                        paddingBottom: '12px', 
+                        marginBottom: '12px', 
+                        display: 'grid', 
+                        gridTemplateColumns: 'minmax(0, 1fr) auto', 
+                        gap: '12px' 
+                      }}>
+                        <div style={{ display: 'grid', gap: '4px', minWidth: 0 }}>
+                          <div style={{ color: 'var(--accent)', fontWeight: '600', fontSize: '15px', overflowWrap: 'anywhere' }}>🏢 {order.storeName || 'Shop'}</div>
+                          <div style={{ color: 'var(--text-secondary)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>{order.storeAddress || 'Store address not provided'}</div>
+                          <div style={{ color: 'var(--text-secondary)' }}>{order.storePhone || 'Store phone not provided'}</div>
                         </div>
-                      ) : (
-                        <div style={{ color: 'var(--text-muted)', padding: '8px' }}>Image not available</div>
-                      )}
-                      {messageTime && (
+                        <div style={{ textAlign: 'right', display: 'grid', alignContent: 'start', justifyItems: 'end', gap: '4px', whiteSpace: 'nowrap' }}>
+                          <strong style={{ color: 'var(--success)', fontSize: '11px' }}>✅ CONFIRMED</strong>
+                          <strong style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '5px' }}>Receipt No:</strong>
+                          <div>{order.receiptNumber || 'Not issued'}</div>
+                          <div style={{ color: 'var(--text-secondary)', fontSize: '10px', lineHeight: 1.4, whiteSpace: 'normal' }}>{formatMessageDate(order.createdAt) || messageDate} {formatMessageTime(order.createdAt) || messageTime}</div>
+                        </div>
+                      </div>
+                      <div style={{ borderBottom: '1px solid var(--card-border)', paddingBottom: '12px', marginBottom: '12px' }}>
                         <div style={{ 
-                          color: isOwn ? '#00000080' : 'var(--text-muted)', 
+                          display: 'grid', 
+                          gridTemplateColumns: '2fr 1fr 1fr 1fr', 
+                          gap: '8px', 
+                          padding: '5px 0', 
+                          color: 'var(--text-muted)', 
                           fontSize: '10px', 
-                          marginTop: '4px', 
-                          textAlign: isOwn ? 'right' : 'left' 
+                          fontWeight: '600', 
+                          borderBottom: '1px solid var(--card-border)', 
+                          textAlign: 'center' 
                         }}>
-                          {messageTime}
+                          <span>Items</span>
+                          <span>Quantity</span>
+                          <span>Price</span>
+                          <span>Total</span>
                         </div>
-                      )}
+                        {order.items?.map((item: any, idx: number) => (
+                          <div key={idx} style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: '2fr 1fr 1fr 1fr', 
+                            gap: '8px', 
+                            padding: '6px 0', 
+                            color: 'var(--text-secondary)', 
+                            alignItems: 'start' 
+                          }}>
+                            <span style={{ overflowWrap: 'anywhere', textAlign: 'left' }}>{item.productTitle || 'Product'}</span>
+                            <span style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{item.quantity || 0}</span>
+                            <span style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{Number(item.price || 0).toLocaleString()}</span>
+                            <span style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{Number(item.total || 0).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ 
+                        borderBottom: '1px solid var(--card-border)', 
+                        paddingBottom: '12px', 
+                        marginBottom: '12px', 
+                        display: 'flex', 
+                        justifyContent: 'flex-end', 
+                        fontWeight: '600' 
+                      }}>
+                        <span style={{ color: 'var(--accent)', whiteSpace: 'nowrap' }}>Total Amount: {Number(order.totalAmount || 0).toLocaleString()} MMK</span>
+                      </div>
+                      <div style={{ 
+                        borderBottom: '1px solid var(--card-border)', 
+                        paddingBottom: '12px', 
+                        marginBottom: '12px', 
+                        display: 'grid', 
+                        gap: '7px', 
+                        color: 'var(--text-secondary)' 
+                      }}>
+                        <div style={{ overflowWrap: 'anywhere' }}><strong style={{ color: 'var(--text-muted)' }}>Buyer Information</strong> - {order.buyerName || order.customerName || receiverName || 'Buyer'}, {order.customerPhone || 'Not provided'}, {order.deliveryAddress || 'Not provided'}</div>
+                        <div><strong style={{ color: 'var(--text-muted)' }}>Payment Method</strong> - {order.paymentMethod || 'Not provided'}</div>
+                      </div>
+                      <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px', fontStyle: 'italic' }}>Thank you for your purchase!</div>
                     </div>
                   </div>
                 </Fragment>
               );
             }
 
-            // ----- ORDER MESSAGE -----
-            if (isOrder) {
-              const order = msg.orderData || {};
-              const isBuyer = activeUserId === order.buyerId;
-              const isCancelled = order.status === 'CANCELLED';
-              const isConfirmed = order.status === 'CONFIRMED';
-
-              if (isConfirmed) {
-                return (
-                  <Fragment key={msg.id}>
-                    {showDateDivider && <div style={{ alignSelf: 'center', color: 'var(--text-muted)', fontSize: '11px', margin: '8px 0 12px', textAlign: 'center' }}>{messageDate}</div>}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', marginBottom: '12px', width: '100%' }}>
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        aria-label="View receipt full screen"
-                        onClick={() => {
-                          setReceiptOrder(order);
-                          setIsReceiptFullscreen(true);
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            setReceiptOrder(order);
-                            setIsReceiptFullscreen(true);
-                          }
-                        }}
-                        style={{ 
-                          backgroundColor: 'var(--card-background)', 
-                          border: '1px solid var(--card-border)', 
-                          borderRadius: '12px', 
-                          padding: '16px', 
-                          color: 'var(--foreground)', 
-                          maxWidth: '420px', 
-                          width: '100%', 
-                          maxHeight: 'min(620px, calc(100vh - 120px))', 
-                          overflowY: 'auto', 
-                          boxSizing: 'border-box', 
-                          fontSize: '12px', 
-                          cursor: 'zoom-in' 
-                        }}
-                      >
-                        {/* Receipt Content */}
-                        <div style={{ 
-                          borderBottom: '1px solid var(--card-border)', 
-                          paddingBottom: '12px', 
-                          marginBottom: '12px', 
-                          display: 'grid', 
-                          gridTemplateColumns: 'minmax(0, 1fr) auto', 
-                          gap: '12px' 
-                        }}>
-                          <div style={{ display: 'grid', gap: '4px', minWidth: 0 }}>
-                            <div style={{ color: 'var(--accent)', fontWeight: '600', fontSize: '15px', overflowWrap: 'anywhere' }}>🏢 {order.storeName || 'Shop'}</div>
-                            <div style={{ color: 'var(--text-secondary)', lineHeight: 1.4, overflowWrap: 'anywhere' }}>{order.storeAddress || 'Store address not provided'}</div>
-                            <div style={{ color: 'var(--text-secondary)' }}>{order.storePhone || 'Store phone not provided'}</div>
-                          </div>
-                          <div style={{ textAlign: 'right', display: 'grid', alignContent: 'start', justifyItems: 'end', gap: '4px', whiteSpace: 'nowrap' }}>
-                            <strong style={{ color: 'var(--success)', fontSize: '11px' }}>✅ CONFIRMED</strong>
-                            <strong style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '5px' }}>Receipt No:</strong>
-                            <div>{order.receiptNumber || 'Not issued'}</div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '10px', lineHeight: 1.4, whiteSpace: 'normal' }}>{formatMessageDate(order.createdAt) || messageDate} {formatMessageTime(order.createdAt) || messageTime}</div>
-                          </div>
-                        </div>
-                        <div style={{ borderBottom: '1px solid var(--card-border)', paddingBottom: '12px', marginBottom: '12px' }}>
-                          <div style={{ 
-                            display: 'grid', 
-                            gridTemplateColumns: '2fr 1fr 1fr 1fr', 
-                            gap: '8px', 
-                            padding: '5px 0', 
-                            color: 'var(--text-muted)', 
-                            fontSize: '10px', 
-                            fontWeight: '600', 
-                            borderBottom: '1px solid var(--card-border)', 
-                            textAlign: 'center' 
-                          }}>
-                            <span>Items</span>
-                            <span>Quantity</span>
-                            <span>Price</span>
-                            <span>Total</span>
-                          </div>
-                          {order.items?.map((item: any, idx: number) => (
-                            <div key={idx} style={{ 
-                              display: 'grid', 
-                              gridTemplateColumns: '2fr 1fr 1fr 1fr', 
-                              gap: '8px', 
-                              padding: '6px 0', 
-                              color: 'var(--text-secondary)', 
-                              alignItems: 'start' 
-                            }}>
-                              <span style={{ overflowWrap: 'anywhere', textAlign: 'left' }}>{item.productTitle || 'Product'}</span>
-                              <span style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{item.quantity || 0}</span>
-                              <span style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{Number(item.price || 0).toLocaleString()}</span>
-                              <span style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{Number(item.total || 0).toLocaleString()}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div style={{ 
-                          borderBottom: '1px solid var(--card-border)', 
-                          paddingBottom: '12px', 
-                          marginBottom: '12px', 
-                          display: 'flex', 
-                          justifyContent: 'flex-end', 
-                          fontWeight: '600' 
-                        }}>
-                          <span style={{ color: 'var(--accent)', whiteSpace: 'nowrap' }}>Total Amount: {Number(order.totalAmount || 0).toLocaleString()} MMK</span>
-                        </div>
-                        <div style={{ 
-                          borderBottom: '1px solid var(--card-border)', 
-                          paddingBottom: '12px', 
-                          marginBottom: '12px', 
-                          display: 'grid', 
-                          gap: '7px', 
-                          color: 'var(--text-secondary)' 
-                        }}>
-                          <div style={{ overflowWrap: 'anywhere' }}><strong style={{ color: 'var(--text-muted)' }}>Buyer Information</strong> - {order.buyerName || order.customerName || receiverName || 'Buyer'}, {order.customerPhone || 'Not provided'}, {order.deliveryAddress || 'Not provided'}</div>
-                          <div><strong style={{ color: 'var(--text-muted)' }}>Payment Method</strong> - {order.paymentMethod || 'Not provided'}</div>
-                        </div>
-                        <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px', fontStyle: 'italic' }}>Thank you for your purchase!</div>
-                      </div>
-                    </div>
-                  </Fragment>
-                );
-              }
-
-              if (isCancelled) {
-                return (
-                  <Fragment key={msg.id}>
-                    {showDateDivider && <div style={{ alignSelf: 'center', color: 'var(--text-muted)', fontSize: '11px', margin: '8px 0 12px', textAlign: 'center' }}>{messageDate}</div>}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', marginBottom: '12px', width: '100%' }}>
-                      <div style={{ 
-                        padding: '12px', 
-                        backgroundColor: '#451a1e', 
-                        border: '1px solid #7f1d1d', 
-                        borderRadius: '12px', 
-                        color: '#fca5a5', 
-                        maxWidth: '280px', 
-                        width: '100%' 
-                      }}>
-                        <p style={{ fontWeight: 'bold', fontSize: '13px', margin: 0 }}>🚫 Order Cancelled</p>
-                        {messageTime && <div style={{ color: '#fca5a5', fontSize: '10px', marginTop: '8px', textAlign: 'right' }}>{messageTime}</div>}
-                      </div>
-                    </div>
-                  </Fragment>
-                );
-              }
-
-              // PENDING Order
+            if (isCancelled) {
               return (
                 <Fragment key={msg.id}>
                   {showDateDivider && <div style={{ alignSelf: 'center', color: 'var(--text-muted)', fontSize: '11px', margin: '8px 0 12px', textAlign: 'center' }}>{messageDate}</div>}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', marginBottom: '12px', width: '100%' }}>
                     <div style={{ 
-                      backgroundColor: 'var(--card-background)', 
-                      border: '1px solid var(--card-border)', 
+                      padding: '12px', 
+                      backgroundColor: '#451a1e', 
+                      border: '1px solid #7f1d1d', 
                       borderRadius: '12px', 
-                      padding: '14px', 
-                      color: 'var(--foreground)', 
+                      color: '#fca5a5', 
                       maxWidth: '280px', 
                       width: '100%' 
                     }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        borderBottom: '1px solid var(--card-border)', 
-                        paddingBottom: '8px', 
-                        marginBottom: '8px' 
-                      }}>
-                        <span style={{ color: 'var(--accent)', fontWeight: '600' }}>🏢 {order.storeName || 'Shop'}</span>
-                        <span style={{ 
-                          fontSize: '10px', 
-                          padding: '2px 8px', 
-                          borderRadius: '10px', 
-                          backgroundColor: '#eab30820', 
-                          color: '#eab308', 
-                          fontWeight: '600' 
-                        }}>PENDING</span>
-                      </div>
-                      {order.items?.map((item: any, idx: number) => (
-                        <div key={idx} style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          fontSize: '12px', 
-                          color: 'var(--text-secondary)', 
-                          padding: '4px 0' 
-                        }}>
-                          <span>{item.productTitle} (x{item.quantity})</span>
-                          <span>{item.total} MMK</span>
-                        </div>
-                      ))}
-                      <div style={{ 
-                        borderTop: '1px solid var(--card-border)', 
-                        paddingTop: '8px', 
-                        marginTop: '8px', 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        fontWeight: '600' 
-                      }}>
-                        <span>Total:</span>
-                        <span style={{ color: 'var(--accent)' }}>{order.totalAmount} MMK</span>
-                      </div>
-                      {isBuyer ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                          <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }} htmlFor={`buyer-phone-${msg.id}`}>Phone number</label>
-                          <input 
-                            id={`buyer-phone-${msg.id}`} 
-                            type="tel" 
-                            value={buyerPhone} 
-                            onChange={(e) => setBuyerPhone(e.target.value)} 
-                            placeholder="Type your phone number" 
-                            style={{ 
-                              width: '100%', 
-                              boxSizing: 'border-box', 
-                              padding: '8px', 
-                              borderRadius: '7px', 
-                              backgroundColor: 'var(--input-background)', 
-                              border: '1px solid var(--input-border)', 
-                              color: 'var(--foreground)' 
-                            }} 
-                          />
-                          <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }} htmlFor={`buyer-address-${msg.id}`}>Delivery address</label>
-                          <textarea 
-                            id={`buyer-address-${msg.id}`} 
-                            value={buyerAddress} 
-                            onChange={(e) => setBuyerAddress(e.target.value)} 
-                            placeholder="Type your delivery address" 
-                            rows={2} 
-                            style={{ 
-                              width: '100%', 
-                              boxSizing: 'border-box', 
-                              padding: '8px', 
-                              borderRadius: '7px', 
-                              backgroundColor: 'var(--input-background)', 
-                              border: '1px solid var(--input-border)', 
-                              color: 'var(--foreground)', 
-                              resize: 'vertical' 
-                            }} 
-                          />
-                          <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }} htmlFor={`buyer-payment-${msg.id}`}>Payment method</label>
-                          <input 
-                            id={`buyer-payment-${msg.id}`} 
-                            type="text" 
-                            value={buyerPaymentMethod} 
-                            onChange={(e) => setBuyerPaymentMethod(e.target.value)} 
-                            placeholder="Type your payment method" 
-                            style={{ 
-                              width: '100%', 
-                              boxSizing: 'border-box', 
-                              padding: '8px', 
-                              borderRadius: '7px', 
-                              backgroundColor: 'var(--input-background)', 
-                              border: '1px solid var(--input-border)', 
-                              color: 'var(--foreground)' 
-                            }} 
-                          />
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                            <button 
-                              onClick={() => { setSelectedOrder(msg); setPendingOrderAction('CONFIRMED'); setIsActionModalOpen(true); }} 
-                              disabled={!buyerPhone.trim() || !buyerAddress.trim() || !buyerPaymentMethod.trim()} 
-                              style={{ 
-                                flex: 1, 
-                                padding: '8px', 
-                                borderRadius: '8px', 
-                                backgroundColor: 'var(--success)', 
-                                border: 'none', 
-                                color: '#fff', 
-                                fontWeight: '600', 
-                                cursor: !buyerPhone.trim() || !buyerAddress.trim() || !buyerPaymentMethod.trim() ? 'not-allowed' : 'pointer', 
-                                opacity: !buyerPhone.trim() || !buyerAddress.trim() || !buyerPaymentMethod.trim() ? 0.45 : 1 
-                              }}
-                            >
-                              Confirm
-                            </button>
-                            <button 
-                              onClick={() => { setSelectedOrder(msg); setPendingOrderAction('CANCELLED'); setIsActionModalOpen(true); }} 
-                              style={{ 
-                                flex: 1, 
-                                padding: '8px', 
-                                borderRadius: '8px', 
-                                backgroundColor: 'var(--error)', 
-                                border: 'none', 
-                                color: '#fff', 
-                                fontWeight: '600', 
-                                cursor: 'pointer' 
-                              }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', marginTop: '10px', fontStyle: 'italic' }}>
-                          Waiting for buyer confirmation...
-                        </div>
-                      )}
-                      {messageTime && <div style={{ color: 'var(--text-muted)', fontSize: '10px', marginTop: '8px', textAlign: 'right' }}>{messageTime}</div>}
+                      <p style={{ fontWeight: 'bold', fontSize: '13px', margin: 0 }}>🚫 Order Cancelled</p>
+                      {messageTime && <div style={{ color: '#fca5a5', fontSize: '10px', marginTop: '8px', textAlign: 'right' }}>{messageTime}</div>}
                     </div>
                   </div>
                 </Fragment>
               );
             }
 
-            // ✅ ----- TEXT MESSAGE (MessageBubble ကိုသုံးမယ်) -----
+            // PENDING Order
             return (
               <Fragment key={msg.id}>
                 {showDateDivider && <div style={{ alignSelf: 'center', color: 'var(--text-muted)', fontSize: '11px', margin: '8px 0 12px', textAlign: 'center' }}>{messageDate}</div>}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: isOwn ? 'flex-end' : 'flex-start', marginBottom: '12px', width: '100%' }}>
+                  <div style={{ 
+                    backgroundColor: 'var(--card-background)', 
+                    border: '1px solid var(--card-border)', 
+                    borderRadius: '12px', 
+                    padding: '14px', 
+                    color: 'var(--foreground)', 
+                    maxWidth: '280px', 
+                    width: '100%' 
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      borderBottom: '1px solid var(--card-border)', 
+                      paddingBottom: '8px', 
+                      marginBottom: '8px' 
+                    }}>
+                      <span style={{ color: 'var(--accent)', fontWeight: '600' }}>🏢 {order.storeName || 'Shop'}</span>
+                      <span style={{ 
+                        fontSize: '10px', 
+                        padding: '2px 8px', 
+                        borderRadius: '10px', 
+                        backgroundColor: '#eab30820', 
+                        color: '#eab308', 
+                        fontWeight: '600' 
+                      }}>PENDING</span>
+                    </div>
+                    {order.items?.map((item: any, idx: number) => (
+                      <div key={idx} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        fontSize: '12px', 
+                        color: 'var(--text-secondary)', 
+                        padding: '4px 0' 
+                      }}>
+                        <span>{item.productTitle} (x{item.quantity})</span>
+                        <span>{item.total} MMK</span>
+                      </div>
+                    ))}
+                    <div style={{ 
+                      borderTop: '1px solid var(--card-border)', 
+                      paddingTop: '8px', 
+                      marginTop: '8px', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      fontWeight: '600' 
+                    }}>
+                      <span>Total:</span>
+                      <span style={{ color: 'var(--accent)' }}>{order.totalAmount} MMK</span>
+                    </div>
+                    {isBuyer ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                        <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }} htmlFor={`buyer-phone-${msg.id}`}>Phone number</label>
+                        <input 
+                          id={`buyer-phone-${msg.id}`} 
+                          type="tel" 
+                          value={buyerPhone} 
+                          onChange={(e) => setBuyerPhone(e.target.value)} 
+                          placeholder="Type your phone number" 
+                          style={{ 
+                            width: '100%', 
+                            boxSizing: 'border-box', 
+                            padding: '8px', 
+                            borderRadius: '7px', 
+                            backgroundColor: 'var(--input-background)', 
+                            border: '1px solid var(--input-border)', 
+                            color: 'var(--foreground)' 
+                          }} 
+                        />
+                        <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }} htmlFor={`buyer-address-${msg.id}`}>Delivery address</label>
+                        <textarea 
+                          id={`buyer-address-${msg.id}`} 
+                          value={buyerAddress} 
+                          onChange={(e) => setBuyerAddress(e.target.value)} 
+                          placeholder="Type your delivery address" 
+                          rows={2} 
+                          style={{ 
+                            width: '100%', 
+                            boxSizing: 'border-box', 
+                            padding: '8px', 
+                            borderRadius: '7px', 
+                            backgroundColor: 'var(--input-background)', 
+                            border: '1px solid var(--input-border)', 
+                            color: 'var(--foreground)', 
+                            resize: 'vertical' 
+                          }} 
+                        />
+                        <label style={{ fontSize: '12px', color: 'var(--text-secondary)' }} htmlFor={`buyer-payment-${msg.id}`}>Payment method</label>
+                        <input 
+                          id={`buyer-payment-${msg.id}`} 
+                          type="text" 
+                          value={buyerPaymentMethod} 
+                          onChange={(e) => setBuyerPaymentMethod(e.target.value)} 
+                          placeholder="Type your payment method" 
+                          style={{ 
+                            width: '100%', 
+                            boxSizing: 'border-box', 
+                            padding: '8px', 
+                            borderRadius: '7px', 
+                            backgroundColor: 'var(--input-background)', 
+                            border: '1px solid var(--input-border)', 
+                            color: 'var(--foreground)' 
+                          }} 
+                        />
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                          <button 
+                            onClick={() => { setSelectedOrder(msg); setPendingOrderAction('CONFIRMED'); setIsActionModalOpen(true); }} 
+                            disabled={!buyerPhone.trim() || !buyerAddress.trim() || !buyerPaymentMethod.trim()} 
+                            style={{ 
+                              flex: 1, 
+                              padding: '8px', 
+                              borderRadius: '8px', 
+                              backgroundColor: 'var(--success)', 
+                              border: 'none', 
+                              color: '#fff', 
+                              fontWeight: '600', 
+                              cursor: !buyerPhone.trim() || !buyerAddress.trim() || !buyerPaymentMethod.trim() ? 'not-allowed' : 'pointer', 
+                              opacity: !buyerPhone.trim() || !buyerAddress.trim() || !buyerPaymentMethod.trim() ? 0.45 : 1 
+                            }}
+                          >
+                            Confirm
+                          </button>
+                          <button 
+                            onClick={() => { setSelectedOrder(msg); setPendingOrderAction('CANCELLED'); setIsActionModalOpen(true); }} 
+                            style={{ 
+                              flex: 1, 
+                              padding: '8px', 
+                              borderRadius: '8px', 
+                              backgroundColor: 'var(--error)', 
+                              border: 'none', 
+                              color: '#fff', 
+                              fontWeight: '600', 
+                              cursor: 'pointer' 
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--text-muted)', marginTop: '10px', fontStyle: 'italic' }}>
+                        Waiting for buyer confirmation...
+                      </div>
+                    )}
+                    {messageTime && <div style={{ color: 'var(--text-muted)', fontSize: '10px', marginTop: '8px', textAlign: 'right' }}>{messageTime}</div>}
+                  </div>
+                </div>
+              </Fragment>
+            );
+          }
+
+          // ✅ ----- TEXT MESSAGE (MessageBubble ကိုသုံးမယ်) -----
+          return (
+            <Fragment key={msg.id}>
+              {showDateDivider && <div style={{ alignSelf: 'center', color: 'var(--text-muted)', fontSize: '11px', margin: '8px 0 12px', textAlign: 'center' }}>{messageDate}</div>}
+              
+              <div
+                id={`msg-${msg.id}`}  // ✅ ဒီမှာ id ထည့်ပါ
+                ref={(el) => {
+                  if (el) {
+                    messageRefs.current[msg.id] = el;
+                  }
+                }}
+                style={{ width: '100%' }}
+              >
                 <MessageBubble 
                   message={msg} 
                   isOwn={isOwn}
                   showReadReceipt={true}
+                  currentUserId={activeUserId}
+                  onReply={(msg) => {
+                    setReplyTo({
+                      id: msg.id,
+                      message: msg.message,
+                      senderId: msg.senderId
+                    });
+                  }}
+                  onReaction={handleReaction}
+                  onDelete={handleDeleteMessage}
                 />
-              </Fragment>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
+              </div>
+            </Fragment>
+          );
+        })}
+        <div ref={messagesEndRef} />
+
+        {/* ✅ Scroll to Bottom Button */}
+        {showScrollButton && (
+          <button
+            onClick={scrollToBottom}
+            style={{
+              position: 'absolute',
+              bottom: '90px',
+              right: '20px',
+              backgroundColor: 'var(--accent)',
+              color: '#000',
+              border: 'none',
+              borderRadius: '50%',
+              width: '46px',
+              height: '46px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+              zIndex: 10,
+              transition: 'all 0.2s ease',
+              opacity: 0.9,
+              animation: 'bounceIn 0.4s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.opacity = '0.9';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.3)';
+            }}
+            aria-label="Scroll to bottom"
+          >
+            <svg 
+              width="24" 
+              height="24" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <path d="M12 5v14" />
+              <path d="M19 12l-7 7-7-7" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       {/* ✅ Typing Indicator */}
       {isTyping && (
@@ -1205,6 +1435,40 @@ export default function ChatRoom({
             }} />
           </div>
           <span>typing...</span>
+        </div>
+      )}
+
+      {/* ✅ Reply Preview */}
+      {replyTo && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: 'var(--hover-background)',
+          padding: '8px 14px',
+          borderTop: '1px solid var(--card-border)',
+          borderBottom: '1px solid var(--card-border)'
+        }}>
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: '600' }}>
+              Replying to {replyTo.senderId === activeUserId ? 'yourself' : 'them'}
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              {replyTo.message}
+            </div>
+          </div>
+          <button
+            onClick={cancelReply}
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '4px 8px'
+            }}
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -1636,8 +1900,7 @@ export default function ChatRoom({
               display: 'grid', 
               gap: '8px', 
               color: 'var(--text-secondary)' 
-            }}>
-              <strong style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Buyer Information</strong>
+            }}>              
               <div style={{ overflowWrap: 'anywhere' }}><strong style={{ color: 'var(--text-muted)' }}>Buyer Information</strong> - {receiptOrder.buyerName || receiptOrder.customerName || 'Buyer'}, {receiptOrder.customerPhone || 'Not provided'}, {receiptOrder.deliveryAddress || 'Not provided'}</div>
               <div><strong style={{ color: 'var(--text-muted)' }}>Payment Method</strong> - {receiptOrder.paymentMethod || 'Not provided'}</div>
             </div>
@@ -1714,27 +1977,34 @@ export default function ChatRoom({
       )}
 
       <style>{`
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      
-      @keyframes marquee {
-        0% { transform: translateX(0%); }
-        100% { transform: translateX(-100%); }
-      }
-      
-      @keyframes typingDot {
-        0%, 60%, 100% {
-          transform: translateY(0);
-          opacity: 0.4;
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
-        30% {
-          transform: translateY(-8px);
-          opacity: 1;
+        
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-100%); }
         }
-      }
-    `}</style>
+        
+        @keyframes typingDot {
+          0%, 60%, 100% {
+            transform: translateY(0);
+            opacity: 0.4;
+          }
+          30% {
+            transform: translateY(-8px);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes bounceIn {
+          0% { transform: scale(0.5); opacity: 0; }
+          50% { transform: scale(1.15); }
+          70% { transform: scale(0.95); }
+          100% { transform: scale(1); opacity: 0.9; }
+        }
+      `}</style>
     </div>
   );
 }

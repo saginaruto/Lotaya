@@ -4,9 +4,8 @@ Digital Shop
 
 DSAING/
 .
-name -h
 [4.0K]  .
-├── [4.0K]  README.md
+├── [3.8K]  README.md
 ├── [ 114]  cors.json
 ├── [4.0K]  dataconnect
 │   ├── [ 456]  dataconnect.yaml
@@ -41,7 +40,7 @@ name -h
 ├── [4.0K]  src
 │   ├── [4.0K]  app
 │   │   ├── [3.1K]  globals.css
-│   │   ├── [4.9K]  layout.tsx
+│   │   ├── [5.6K]  layout.tsx
 │   │   └── [ 17K]  page.tsx
 │   ├── [4.0K]  components
 │   │   ├── [5.5K]  BannerSlider.tsx
@@ -49,12 +48,13 @@ name -h
 │   │   ├── [ 13K]  CategoryAds.tsx
 │   │   ├── [8.7K]  ChatList.tsx
 │   │   ├── [ 12K]  ChatModal.tsx
-│   │   ├── [ 66K]  ChatRoom.tsx
+│   │   ├── [ 76K]  ChatRoom.tsx
 │   │   ├── [1.5K]  EmojiButton.tsx
 │   │   ├── [1.6K]  EmojiPicker.tsx
 │   │   ├── [9.9K]  Header.tsx
 │   │   ├── [ 18K]  LanguageProvider.tsx
 │   │   ├── [6.3K]  LocationModal.tsx
+│   │   ├── [ 23K]  MessageBubble.tsx
 │   │   ├── [2.4K]  NotificationProvider.tsx
 │   │   ├── [4.8K]  NotificationToggle.tsx
 │   │   ├── [ 17K]  ProductDetailModal.tsx
@@ -85,10 +85,11 @@ name -h
 │   │   └── [ 853]  package.json
 │   ├── [4.0K]  hooks
 │   │   ├── [2.1K]  useAutoSlide.ts
-│   │   └── [1.7K]  useNotifications.ts
+│   │   ├── [1.7K]  useNotifications.ts
+│   │   └── [2.3K]  useTyping.ts
 │   ├── [4.0K]  lib
 │   │   ├── [ 937]  ReceiptNumber.ts
-│   │   ├── [ 13K]  chat.ts
+│   │   ├── [ 19K]  chat.ts
 │   │   ├── [ 710]  cloudinary.ts
 │   │   ├── [6.1K]  firebase.ts
 │   │   └── [ 12K]  translations.ts
@@ -96,6 +97,8 @@ name -h
 │   ├── [4.0K]  styles
 │   │   └── [ 365]  menuButtonStyle.ts
 │   └── [4.0K]  types
-│       └── [2.7K]  index.ts
+│       └── [3.1K]  index.ts
 ├── [ 735]  tsconfig.json
 └── [137K]  tsconfig.tsbuildinfo
+
+18 directories, 78 files

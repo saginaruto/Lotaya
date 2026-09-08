@@ -29,6 +29,12 @@ export interface Product {
   category: string;
   imageUrl: string;
   inStock: boolean;
+  views?: number;           // ကြည့်ရှုမှု
+  wishlistCount?: number;   // Wishlist ထည့်ထားသူဦးရေ
+  totalSales?: number;      // ရောင်းရအရေအတွက်
+  totalRevenue?: number;    // ရရှိငွေ
+  averageRating?: number;   // ပျမ်းမျှအဆင့်
+  totalReviews?: number;    // သုံးသပ်ချက်အရေအတွက်
 }
 
 // 🛒 ၄.၁။ အော်ဒါထဲပါမည့် တစ်ခုချင်းစီ၏ ပစ္စည်းအချက်အလက် (အသစ်ထည့်ရန်)
@@ -66,4 +72,17 @@ export interface ChatMessage {
   orderId?: string;
   orderData?: Order;
   createdAt: any;
+}
+
+// ✅ Message Reactions
+export interface MessageReaction {
+  emoji: string;
+  userIds: string[]; // ဘယ်သူတွေ နှိပ်ထားလဲ
+}
+
+// ✅ Extended ChatMessage
+export interface ChatMessageWithReactions extends ChatMessage {
+  reactions?: { [emoji: string]: string[] }; // emoji -> userId[]
+  deleted?: boolean;
+  deletedFor?: string[]; // ဘယ်သူတွေအတွက် ဖျက်ပြီးလဲ
 }

@@ -15,7 +15,9 @@ import {
   limit,
   setDoc,
   writeBatch,
-  increment
+  increment,
+  QueryDocumentSnapshot,  // ✅ ဒါထည့်ပါ
+  DocumentData           // ✅ ဒါထည့်ပါ
 } from 'firebase/firestore';
 
 export interface ChatMessage {
@@ -31,6 +33,10 @@ export interface ChatMessage {
   orderId?: string;
   orderData?: any;
   _offline?: boolean;
+  replyTo?: { id: string; message: string; senderId: string };
+  reactions?: { [emoji: string]: string[] };  // ✅ ထည့်ပါ
+  deleted?: boolean;                          // ✅ ထည့်ပါ
+  deletedFor?: string[];                      // ✅ ထည့်ပါ
 }
 
 export interface ChatRoom {
@@ -180,7 +186,8 @@ export const sendMessage = async (
   chatId: string,
   senderId: string,
   receiverId: string,
-  message: string
+  message: string,
+  replyTo?: { id: string; message: string; senderId: string }
 ) => {
   try {
     const trimmedMessage = message.trim();
@@ -203,7 +210,9 @@ export const sendMessage = async (
     }
 
     const messageRef = collection(db, 'chats', chatId, 'messages');
-    await addDoc(messageRef, {
+    
+    // ✅ Message Data
+    const messageData: any = {
       senderId,
       receiverId,
       message: trimmedMessage,
@@ -211,7 +220,18 @@ export const sendMessage = async (
       read: false,
       type: 'text',
       _offline: !navigator.onLine,
-    });
+    };
+
+    // ✅ Reply Data ရှိရင် ထည့်မယ်
+    if (replyTo) {
+      messageData.replyTo = {
+        id: replyTo.id,
+        message: replyTo.message,
+        senderId: replyTo.senderId
+      };
+    }
+
+    await addDoc(messageRef, messageData);
 
     await updateDoc(chatRef, {
       lastMessage: trimmedMessage,
@@ -288,7 +308,6 @@ export const markMessagesAsRead = async (chatId: string, userId: string) => {
 
 // ===== ✅ ပြင်ဆင်ထားတဲ့ listenUserChats =====
 export const listenUserChats = (userId: string, callback: (chats: ChatRoom[]) => void) => {
-  // ✅ userChats collection ကို နားထောင်မယ်
   const q = query(
     collection(db, 'userChats', userId, 'chats'),
     orderBy('lastMessageTime', 'desc')
@@ -301,7 +320,6 @@ export const listenUserChats = (userId: string, callback: (chats: ChatRoom[]) =>
       const data = docSnapshot.data();
       const chatId = docSnapshot.id;
       
-      // ✅ chatId နဲ့ chats collection ကို သွားယူမယ်
       const chatRef = doc(db, 'chats', chatId);
       const chatSnap = await getDoc(chatRef);
       
@@ -321,7 +339,9 @@ export const listenUserChats = (userId: string, callback: (chats: ChatRoom[]) =>
       const lastMessageSenderId = data.lastMessageSenderId || '';
       
       const ids = chatId.split('_');
-      const otherUserId = ids.find((id) => id !== userId) || participants.find((p: string) => p !== userId);
+      // ✅ ဒီမှာ id အတွက် type သတ်မှတ်ပေးထားပါတယ်
+      const otherUserId = ids.find((id: string) => id !== userId) || 
+                          participants.find((p: string) => p !== userId);
       let otherUserName = '', otherUserPhoto = '';
       
       if (otherUserId) {
@@ -353,7 +373,6 @@ export const listenUserChats = (userId: string, callback: (chats: ChatRoom[]) =>
     callback(chatRooms);
   });
 };
-
 export const listenChatRoom = (chatId: string, callback: (messages: ChatMessage[]) => void) => {
   const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('timestamp', 'asc'));
   
@@ -373,6 +392,10 @@ export const listenChatRoom = (chatId: string, callback: (messages: ChatMessage[
         orderId: data.orderId || '',
         orderData: data.orderData || null,
         _offline: data._offline || false,
+        replyTo: data.replyTo || null,
+        reactions: data.reactions || {},
+        deleted: data.deleted || false,
+        deletedFor: data.deletedFor || [],
       };
     });
     callback(messages);
@@ -382,10 +405,21 @@ export const listenChatRoom = (chatId: string, callback: (messages: ChatMessage[
   });
 };
 
-export const listenChatRoomWithUnread = (chatId: string, userId: string, callback: (messages: ChatMessage[], unreadCount: number) => void) => {
-  const q = query(collection(db, 'chats', chatId, 'messages'), orderBy('timestamp', 'asc'), limit(50));
+// ✅ listenChatRoomWithUnread - TYPE ERROR ပြေအောင် ပြင်ထားပါတယ်
+export const listenChatRoomWithUnread = (
+  chatId: string, 
+  userId: string, 
+  callback: (messages: ChatMessage[], unreadCount: number) => void
+) => {
+  const q = query(
+    collection(db, 'chats', chatId, 'messages'), 
+    orderBy('timestamp', 'asc'), 
+    limit(50)
+  );
+  
   return onSnapshot(q, async (snapshot) => {
-    const messages: ChatMessage[] = snapshot.docs.map((doc) => {
+    // ✅ doc အတွက် type သတ်မှတ်ပေးထားပါတယ်
+    const messages: ChatMessage[] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -400,8 +434,13 @@ export const listenChatRoomWithUnread = (chatId: string, userId: string, callbac
         orderId: data.orderId || '',
         orderData: data.orderData || null,
         _offline: data._offline || false,
+        replyTo: data.replyTo || null, // ✅ ဒီလိုင်းလေး ထည့်ပေးပါ
+        reactions: data.reactions || {},
+        deleted: data.deleted || false,
+        deletedFor: data.deletedFor || [],
       };
     });
+    
     const chatSnap = await getDoc(doc(db, 'chats', chatId));
     const unreadCount = chatSnap.exists() ? chatSnap.data().unreadCount?.[userId] || 0 : 0;
     callback(messages, unreadCount);
@@ -453,4 +492,120 @@ export const listenTypingStatus = (
       }
     }
   });
+};
+
+// ===== ✅ Message Reactions =====
+export const toggleMessageReaction = async (
+  chatId: string,
+  messageId: string,
+  userId: string,
+  emoji: string
+) => {
+  try {
+    const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+    const messageSnap = await getDoc(messageRef);
+    
+    if (!messageSnap.exists()) {
+      throw new Error('Message not found');
+    }
+    
+    const data = messageSnap.data();
+    const reactions = data.reactions || {};
+    
+    // ✅ ဒီ User ရဲ့ လက်ရှိ Emoji ကိုရှာမယ်
+    let currentUserEmoji: string | null = null;
+    for (const [key, userIds] of Object.entries(reactions)) {
+      if (Array.isArray(userIds) && userIds.includes(userId)) {
+        currentUserEmoji = key;
+        break;
+      }
+    }
+    
+    // ✅ အသစ်ရွေးတဲ့ Emoji က လက်ရှိ Emoji နဲ့တူရင် → ဖယ်မယ် (unreact)
+    if (currentUserEmoji === emoji) {
+      // ဒီ Emoji ကနေ User ကိုဖယ်မယ်
+      reactions[emoji] = (reactions[emoji] || []).filter((id: string) => id !== userId);
+      if (reactions[emoji].length === 0) {
+        delete reactions[emoji];
+      }
+      await updateDoc(messageRef, { reactions });
+      console.log(`✅ Reaction removed: ${emoji} by ${userId}`);
+      return;
+    }
+    
+    // ✅ တစ်ခြား Emoji ဆိုရင် ဟောင်းကိုဖယ်ပြီး အသစ်ထည့်မယ်
+    // ၁။ ဟောင်းကိုဖယ်မယ်
+    if (currentUserEmoji) {
+      reactions[currentUserEmoji] = (reactions[currentUserEmoji] || []).filter(
+        (id: string) => id !== userId
+      );
+      if (reactions[currentUserEmoji].length === 0) {
+        delete reactions[currentUserEmoji];
+      }
+    }
+    
+    // ၂။ အသစ်ထည့်မယ်
+    reactions[emoji] = [...(reactions[emoji] || []), userId];
+    
+    await updateDoc(messageRef, { reactions });
+    console.log(`✅ Reaction changed: ${currentUserEmoji || 'none'} → ${emoji} by ${userId}`);
+    
+  } catch (error) {
+    console.error('❌ Error toggling reaction:', error);
+    throw error;
+  }
+};
+
+// ===== ✅ Delete Message =====
+export const deleteMessage = async (
+  chatId: string,
+  messageId: string,
+  userId: string,
+  deleteForEveryone: boolean = true
+) => {
+  try {
+    const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+    const messageSnap = await getDoc(messageRef);
+    
+    if (!messageSnap.exists()) {
+      throw new Error('Message not found');
+    }
+    
+    const data = messageSnap.data();
+    
+    // ✅ ကိုယ်ပို့ထားတာမှသာ ဖျက်ခွင့်ရှိမယ်
+    if (data.senderId !== userId) {
+      throw new Error('You can only delete your own messages');
+    }
+    
+    if (deleteForEveryone) {
+      // အားလုံးအတွက် ဖျက်မယ်
+      await updateDoc(messageRef, {
+        deleted: true,
+        message: 'This message was deleted',
+        reactions: {}, // reactions အကုန်ဖျက်မယ်
+      });
+      console.log(`✅ Message ${messageId} deleted for everyone`);
+    } else {
+      // ကိုယ်အတွက်ပဲ ဖျက်မယ်
+      const deletedFor = data.deletedFor || [];
+      if (!deletedFor.includes(userId)) {
+        await updateDoc(messageRef, {
+          deletedFor: [...deletedFor, userId]
+        });
+      }
+      console.log(`✅ Message ${messageId} deleted for user ${userId}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error deleting message:', error);
+    throw error;
+  }
+};
+
+// ===== ✅ Get message reactions summary =====
+export const getReactionsSummary = (reactions: { [emoji: string]: string[] } = {}) => {
+  return Object.entries(reactions)
+    .filter(([_, users]) => users.length > 0)
+    .map(([emoji, users]) => ({ emoji, count: users.length, users }));
 };

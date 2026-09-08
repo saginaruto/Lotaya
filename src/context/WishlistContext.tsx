@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 
 interface WishlistContextType {
   wishlist: string[];
@@ -63,6 +63,13 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       await updateDoc(docRef, {
         wishlist: arrayUnion(productId)
       });
+      
+      // ✅ Product ထဲက wishlistCount ကိုတိုးမယ်
+      const productRef = doc(db, 'products', productId);
+      await updateDoc(productRef, {
+        wishlistCount: increment(1)
+      });
+      
       setWishlist(prev => [...prev, productId]);
     } catch (error) {
       console.error('Error adding to wishlist:', error);
@@ -77,6 +84,13 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       await updateDoc(docRef, {
         wishlist: arrayRemove(productId)
       });
+      
+      // ✅ Product ထဲက wishlistCount ကိုလျှော့မယ်
+      const productRef = doc(db, 'products', productId);
+      await updateDoc(productRef, {
+        wishlistCount: increment(-1)
+      });
+      
       setWishlist(prev => prev.filter(id => id !== productId));
     } catch (error) {
       console.error('Error removing from wishlist:', error);

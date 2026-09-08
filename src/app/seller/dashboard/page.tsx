@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ArrowLeft, Package, PlusCircle, Search, ClipboardList, BarChart3 } from 'lucide-react';
 import { useLanguage } from '@/components/LanguageProvider';
 
+// ✅ Product Interface - အကုန်ထည့်ပါ
 interface Product {
   id: string;
   title?: string;
@@ -24,6 +25,12 @@ interface Product {
   location?: string;
   cta?: string;
   stock?: number;
+  views?: number;
+  wishlistCount?: number;
+  totalSales?: number;
+  totalRevenue?: number;
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 interface SaleOrder {
@@ -306,90 +313,107 @@ export default function SellerDashboard() {
         {/* Stats */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
           gap: '16px',
           marginBottom: '24px'
         }}>
-          <div
-            style={{
-              backgroundColor: 'var(--card-background)',
-              border: '1px solid var(--card-border)',
-              borderRadius: '12px',
-              padding: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}
-          >
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--hover-background)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--accent)'
-              }}
-            >
-              <Package size={20} />
-            </div>
-            <div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t('dashboard.totalProducts')}</div>
-              <div style={{ color: 'var(--foreground)', fontSize: '18px', fontWeight: '700' }}>{products.length}</div>
+          <div style={{
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--card-border)',
+            borderRadius: '12px',
+            padding: '16px',
+          }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>📦 {t('dashboard.totalProducts')}</div>
+            <div style={{ color: 'var(--foreground)', fontSize: '24px', fontWeight: '700' }}>{products.length}</div>
+          </div>
+
+          <div style={{
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--card-border)',
+            borderRadius: '12px',
+            padding: '16px',
+          }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>👁️ {t('dashboard.totalViews')}</div>
+            <div style={{ color: 'var(--foreground)', fontSize: '24px', fontWeight: '700' }}>
+              {products.reduce((sum, p) => sum + (p.views || 0), 0).toLocaleString()}
             </div>
           </div>
-          <div
-            role="button"
-            tabIndex={0}
-            aria-expanded={isSalesCalendarOpen}
-            aria-label="Open monthly sales calendar"
-            onClick={() => setIsSalesCalendarOpen((isOpen) => !isOpen)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') setIsSalesCalendarOpen((isOpen) => !isOpen);
-            }}
-            style={{ backgroundColor: 'var(--card-background)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '16px', cursor: 'pointer' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-              <BarChart3 size={20} color="#22c55e" />
-              <strong style={{ color: 'var(--foreground)', fontSize: '14px' }}>{t('dashboard.monthlySalesSummary')}</strong>
+
+          <div style={{
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--card-border)',
+            borderRadius: '12px',
+            padding: '16px',
+          }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>❤️ {t('dashboard.totalWishlist')}</div>
+            <div style={{ color: 'var(--foreground)', fontSize: '24px', fontWeight: '700' }}>
+              {products.reduce((sum, p) => sum + (p.wishlistCount || 0), 0).toLocaleString()}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', color: 'var(--text-secondary)', fontSize: '12px' }}>
-              <span>{monthNames[selectedSalesMonth]}</span>
-              <strong style={{ color: 'var(--accent)', whiteSpace: 'nowrap' }}>{(selectedMonthSummary?.total || 0).toLocaleString()} MMK</strong>
+          </div>
+
+          <div style={{
+            backgroundColor: 'var(--card-background)',
+            border: '1px solid var(--card-border)',
+            borderRadius: '12px',
+            padding: '16px',
+          }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>🛒 {t('dashboard.totalSales')}</div>
+            <div style={{ color: 'var(--foreground)', fontSize: '24px', fontWeight: '700' }}>
+              {products.reduce((sum, p) => sum + (p.totalSales || 0), 0).toLocaleString()}
             </div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '5px' }}>{selectedMonthOrders} completed order{selectedMonthOrders === 1 ? '' : 's'}</div>
-            {isSalesCalendarOpen && (
-              <div onClick={(event) => event.stopPropagation()} style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--card-border)' }}>
-                <div style={{ color: 'var(--foreground)', fontSize: '20px', fontWeight: 700, textAlign: 'center', marginBottom: '10px' }}>{selectedSalesYear}</div>
-                <div style={{ color: 'var(--text-secondary)', fontSize: '11px', textAlign: 'center', marginBottom: '6px' }}>{t('dashboard.selectYear')}</div>
-                <div style={{ display: 'grid', gap: '6px', maxHeight: '96px', overflowY: 'auto', overscrollBehavior: 'contain', padding: '2px 4px 8px 2px', marginBottom: '12px' }}>
-                  {availableYears.map((year) => (
-                    <button
-                      key={year}
-                      onClick={() => setSelectedSalesYear(year)}
-                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: year === selectedSalesYear ? '1px solid var(--accent)' : '1px solid var(--card-border)', backgroundColor: year === selectedSalesYear ? 'var(--hover-background)' : 'var(--card-background)', color: 'var(--foreground)', cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}
-                    >
-                      {year}
-                    </button>
-                  ))}
-                </div>
-                <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginBottom: '7px' }}>{t('dashboard.selectMonth')}</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px' }}>
-                  {monthNames.map((month, index) => (
-                    <button
-                      key={month}
-                      onClick={() => setSelectedSalesMonth(index)}
-                      style={{ width: '100%', minWidth: 0, padding: '9px 4px', borderRadius: '6px', border: index === selectedSalesMonth ? '1px solid var(--accent)' : '1px solid var(--card-border)', backgroundColor: index === selectedSalesMonth ? 'var(--hover-background)' : 'var(--card-background)', color: 'var(--foreground)', cursor: 'pointer', fontSize: '11px', textAlign: 'center' }}
-                    >
-                      {month}
-                    </button>
-                  ))}
-                </div>
+          </div>
+        </div>
+
+        {/* Monthly Sales Calendar */}
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={isSalesCalendarOpen}
+          aria-label="Open monthly sales calendar"
+          onClick={() => setIsSalesCalendarOpen((isOpen) => !isOpen)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') setIsSalesCalendarOpen((isOpen) => !isOpen);
+          }}
+          style={{ backgroundColor: 'var(--card-background)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '16px', cursor: 'pointer', marginBottom: '24px' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <BarChart3 size={20} color="#22c55e" />
+            <strong style={{ color: 'var(--foreground)', fontSize: '14px' }}>{t('dashboard.monthlySalesSummary')}</strong>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', color: 'var(--text-secondary)', fontSize: '12px' }}>
+            <span>{monthNames[selectedSalesMonth]}</span>
+            <strong style={{ color: 'var(--accent)', whiteSpace: 'nowrap' }}>{(selectedMonthSummary?.total || 0).toLocaleString()} MMK</strong>
+          </div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '5px' }}>{selectedMonthOrders} completed order{selectedMonthOrders === 1 ? '' : 's'}</div>
+          {isSalesCalendarOpen && (
+            <div onClick={(event) => event.stopPropagation()} style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--card-border)' }}>
+              <div style={{ color: 'var(--foreground)', fontSize: '20px', fontWeight: 700, textAlign: 'center', marginBottom: '10px' }}>{selectedSalesYear}</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '11px', textAlign: 'center', marginBottom: '6px' }}>{t('dashboard.selectYear')}</div>
+              <div style={{ display: 'grid', gap: '6px', maxHeight: '96px', overflowY: 'auto', overscrollBehavior: 'contain', padding: '2px 4px 8px 2px', marginBottom: '12px' }}>
+                {availableYears.map((year) => (
+                  <button
+                    key={year}
+                    onClick={() => setSelectedSalesYear(year)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: year === selectedSalesYear ? '1px solid var(--accent)' : '1px solid var(--card-border)', backgroundColor: year === selectedSalesYear ? 'var(--hover-background)' : 'var(--card-background)', color: 'var(--foreground)', cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}
+                  >
+                    {year}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginBottom: '7px' }}>{t('dashboard.selectMonth')}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px' }}>
+                {monthNames.map((month, index) => (
+                  <button
+                    key={month}
+                    onClick={() => setSelectedSalesMonth(index)}
+                    style={{ width: '100%', minWidth: 0, padding: '9px 4px', borderRadius: '6px', border: index === selectedSalesMonth ? '1px solid var(--accent)' : '1px solid var(--card-border)', backgroundColor: index === selectedSalesMonth ? 'var(--hover-background)' : 'var(--card-background)', color: 'var(--foreground)', cursor: 'pointer', fontSize: '11px', textAlign: 'center' }}
+                  >
+                    {month}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -674,9 +698,25 @@ export default function SellerDashboard() {
                       }}>
                         {product.title || 'Untitled'}
                       </h4>
+                      
                       <p style={{ color: 'var(--accent)', fontSize: '13px', fontWeight: '700', margin: '0 0 2px 0' }}>
                         {product.price || 'N/A'}
                       </p>
+                      
+                      {/* ✅ Product Analytics - ထည့်ပါ */}
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: '10px', 
+                        fontSize: '11px', 
+                        color: 'var(--text-muted)',
+                        marginTop: '4px',
+                        flexWrap: 'wrap'
+                      }}>
+                        <span>👁️ {product.views || 0}</span>
+                        <span>❤️ {product.wishlistCount || 0}</span>
+                        <span>🛒 {product.totalSales || 0}</span>
+                        <span>⭐ {(product.averageRating || 0).toFixed(1)}/5</span>
+                      </div>
                       
                       <p style={{ 
                         color: isOutOfStock ? 'var(--error)' : 
@@ -684,7 +724,7 @@ export default function SellerDashboard() {
                                'var(--success)', 
                         fontSize: '11px', 
                         fontWeight: '600', 
-                        margin: '0 0 2px 0' 
+                        margin: '4px 0 2px 0' 
                       }}>
                         📦 {isOutOfStock ? t('dashboard.outOfStock') : 
                             isLowStock ? `⚠️ ${stock} ${t('dashboard.left')}` : 
