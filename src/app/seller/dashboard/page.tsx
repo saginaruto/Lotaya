@@ -6,8 +6,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Package, PlusCircle, Search, ClipboardList, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Package, PlusCircle, Search, ClipboardList, BarChart3, Eye, Heart, ShoppingBag } from 'lucide-react';
 import { useLanguage } from '@/components/LanguageProvider';
+import ProductAnalyticsModal from '@/components/ProductAnalyticsModal';
 
 // ✅ Product Interface - အကုန်ထည့်ပါ
 interface Product {
@@ -53,6 +54,11 @@ export default function SellerDashboard() {
   const [selectedSalesMonth, setSelectedSalesMonth] = useState(() => new Date().getMonth());
   const [selectedSalesYear, setSelectedSalesYear] = useState(() => new Date().getFullYear());
   const [error, setError] = useState<string | null>(null);
+
+  const [analyticsModal, setAnalyticsModal] = useState<{
+    isOpen: boolean;
+    type: 'views' | 'wishlist' | 'sales' | null;
+  }>({ isOpen: false, type: null });
 
   const getCreatedAtTime = (createdAt: any): number => {
     if (!createdAt) return 0;
@@ -232,6 +238,19 @@ export default function SellerDashboard() {
   if (!user || !userData || !['seller', 'VENDOR'].includes(userData.role)) {
     return null;
   }
+  // Analytics Data Functions
+  const getAnalyticsData = (type: 'views' | 'wishlist' | 'sales') => {
+    return products.map(p => ({
+      id: p.id,
+      title: p.title || 'Untitled',
+      value: type === 'views' ? (p.views || 0) :
+            type === 'wishlist' ? (p.wishlistCount || 0) :
+            (p.totalSales || 0),
+      icon: type === 'views' ? '👁️' :
+            type === 'wishlist' ? '❤️' :
+            '🛒',
+    }));
+  };
 
   const lowStockCount = products.filter(p => (p.stock || 0) > 0 && (p.stock || 0) < 10).length;
   const outOfStockCount = products.filter(p => (p.stock || 0) === 0).length;
@@ -257,9 +276,11 @@ export default function SellerDashboard() {
   const selectedMonthKey = `${selectedSalesYear}-${String(selectedSalesMonth + 1).padStart(2, '0')}`;
   const selectedMonthSummary = monthlySales[selectedMonthKey];
   const selectedMonthOrders = sales.filter((sale) => {
-    const saleDate = new Date(getCreatedAtTime(sale.createdAt));
-    return saleDate.getFullYear() === selectedSalesYear && saleDate.getMonth() === selectedSalesMonth;
-  }).length;
+  const saleDate = new Date(getCreatedAtTime(sale.createdAt));
+      return saleDate.getFullYear() === selectedSalesYear && saleDate.getMonth() === selectedSalesMonth;
+    }).length;  
+
+  
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--background)', padding: '20px' }}>
@@ -311,12 +332,22 @@ export default function SellerDashboard() {
         </div>
 
         {/* Stats */}
-        <div style={{
+        <div className="stats-grid" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '12px',
           marginBottom: '24px'
         }}>
+          <style>{`
+            @media (min-width: 640px) {
+              .stats-grid {
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 16px !important;
+              }
+            }
+          `}</style>
+
+          {/* Total Products - Not Clickable */}
           <div style={{
             backgroundColor: 'var(--card-background)',
             border: '1px solid var(--card-border)',
@@ -327,43 +358,85 @@ export default function SellerDashboard() {
             <div style={{ color: 'var(--foreground)', fontSize: '24px', fontWeight: '700' }}>{products.length}</div>
           </div>
 
-          <div style={{
-            backgroundColor: 'var(--card-background)',
-            border: '1px solid var(--card-border)',
-            borderRadius: '12px',
-            padding: '16px',
-          }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>👁️ {t('dashboard.totalViews')}</div>
+          {/* Total Views - Clickable */}
+          <div
+            onClick={() => setAnalyticsModal({ isOpen: true, type: 'views' })}
+            style={{
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--card-border)',
+              borderRadius: '12px',
+              padding: '16px',
+              cursor: 'pointer',
+              transition: 'transform 0.2s, border-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.03)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.borderColor = 'var(--card-border)';
+            }}
+          >
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>👁️ {t('Total Views')}</div>
             <div style={{ color: 'var(--foreground)', fontSize: '24px', fontWeight: '700' }}>
               {products.reduce((sum, p) => sum + (p.views || 0), 0).toLocaleString()}
             </div>
           </div>
 
-          <div style={{
-            backgroundColor: 'var(--card-background)',
-            border: '1px solid var(--card-border)',
-            borderRadius: '12px',
-            padding: '16px',
-          }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>❤️ {t('dashboard.totalWishlist')}</div>
+          {/* Total Wishlist - Clickable */}
+          <div
+            onClick={() => setAnalyticsModal({ isOpen: true, type: 'wishlist' })}
+            style={{
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--card-border)',
+              borderRadius: '12px',
+              padding: '16px',
+              cursor: 'pointer',
+              transition: 'transform 0.2s, border-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.03)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.borderColor = 'var(--card-border)';
+            }}
+          >
+            <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>❤️ {t('Total Wishlist')}</div>
             <div style={{ color: 'var(--foreground)', fontSize: '24px', fontWeight: '700' }}>
               {products.reduce((sum, p) => sum + (p.wishlistCount || 0), 0).toLocaleString()}
             </div>
           </div>
 
-          <div style={{
-            backgroundColor: 'var(--card-background)',
-            border: '1px solid var(--card-border)',
-            borderRadius: '12px',
-            padding: '16px',
-          }}>
+          {/* Total Sales - Clickable */}
+          <div
+            onClick={() => setAnalyticsModal({ isOpen: true, type: 'sales' })}
+            style={{
+              backgroundColor: 'var(--card-background)',
+              border: '1px solid var(--card-border)',
+              borderRadius: '12px',
+              padding: '16px',
+              cursor: 'pointer',
+              transition: 'transform 0.2s, border-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.03)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.borderColor = 'var(--card-border)';
+            }}
+          >
             <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>🛒 {t('dashboard.totalSales')}</div>
             <div style={{ color: 'var(--foreground)', fontSize: '24px', fontWeight: '700' }}>
               {products.reduce((sum, p) => sum + (p.totalSales || 0), 0).toLocaleString()}
             </div>
           </div>
-        </div>
-
+        </div>    
+        
         {/* Monthly Sales Calendar */}
         <div
           role="button"
@@ -560,11 +633,8 @@ export default function SellerDashboard() {
             </Link>
           </div>
 
-          {/* Search Bar */}
-          <div style={{
-            position: 'relative',
-            marginBottom: '16px'
-          }}>
+          {/* Search Bar - အတိုင်းပဲ */}
+          <div style={{ position: 'relative', marginBottom: '16px' }}>
             <input
               type="text"
               value={searchTerm}
@@ -636,11 +706,26 @@ export default function SellerDashboard() {
               {searchTerm ? t('dashboard.noMatch') : t('dashboard.noProducts')}
             </div>
           ) : (
-            <div style={{
+            <div className="products-grid" style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '12px'
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '12px',
             }}>
+              <style>{`
+                @media (min-width: 640px) {
+                  .products-grid {
+                    grid-template-columns: repeat(3, 1fr) !important;
+                    gap: 16px !important;
+                  }
+                }
+                @media (min-width: 1024px) {
+                  .products-grid {
+                    grid-template-columns: repeat(4, 1fr) !important;
+                    gap: 20px !important;
+                  }
+                }
+              `}</style>
+              
               {filteredProducts.slice(0, 4).map((product) => {
                 const stock = product.stock || 0;
                 const isLowStock = stock > 0 && stock < 10;
@@ -741,7 +826,30 @@ export default function SellerDashboard() {
             </div>
           )}
         </div>
-      </div>
+        {/* Modal */}
+        {analyticsModal.isOpen && analyticsModal.type && (
+          <ProductAnalyticsModal
+            isOpen={analyticsModal.isOpen}
+            onClose={() => setAnalyticsModal({ isOpen: false, type: null })}
+            title={
+              analyticsModal.type === 'views' ? 'Total Views' :
+              analyticsModal.type === 'wishlist' ? 'Total Wishlist' :
+              'Total Sales'
+            }
+            icon={
+              analyticsModal.type === 'views' ? <Eye size={20} /> :
+              analyticsModal.type === 'wishlist' ? <Heart size={20} /> :
+              <ShoppingBag size={20} />
+            }
+            data={getAnalyticsData(analyticsModal.type)}
+            total={
+              analyticsModal.type === 'views' ? products.reduce((sum, p) => sum + (p.views || 0), 0) :
+              analyticsModal.type === 'wishlist' ? products.reduce((sum, p) => sum + (p.wishlistCount || 0), 0) :
+              products.reduce((sum, p) => sum + (p.totalSales || 0), 0)
+            }
+          />
+        )}
+      </div>      
     </div>
   );
 }
